@@ -1,4 +1,5 @@
-﻿using HZtest.DTO;
+﻿using HZtest.Converters;
+using HZtest.DTO;
 using HZtest.Interfaces_接口定义;
 using HZtest.Models;
 using HZtest.Services; // 必需
@@ -353,8 +354,19 @@ namespace HZtest.ViewModels
                 if (result.HasValue)
                 {
                     // 用户点击了确定
-                    _messageService.ShowMessage($"您选择了模式: {result.Value}");
                     CurrentModeValue = result.Value; // 更新本地状态
+                    var setResult = await DeviceService.SetOperationModeAsync((DevOperationModeEnum)CurrentModeValue);
+                    if (setResult.Code ==0)
+                    {
+                        _messageService.ShowMessage($"设置成功");
+                    }
+                    else
+                    {
+                        _messageService.ShowError($"{setResult.Status}");
+                    }
+
+
+
                 }
                 else
                 {

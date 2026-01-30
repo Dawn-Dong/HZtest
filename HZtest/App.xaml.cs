@@ -1,4 +1,4 @@
-﻿using HZtest.Interfaces_接口定义;  // 你的接口命名空间
+﻿using HZtest.Interfaces_接口定义;
 using HZtest.Services;
 using HZtest.View;
 using HZtest.ViewModels;
@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
 using System.Windows.Controls;
+
 
 namespace HZtest
 {
@@ -76,20 +77,15 @@ namespace HZtest
                 MessageBox.Show("MainWindow.xaml 必须包含 Name=\"RootGrid\" 的 Grid");
                 return;
             }
-            Console.WriteLine($"rootGrid.ActualWidth:{rootGrid.ActualWidth} ,rootGrid.Children.Count:{rootGrid.Children.Count}  , rootGrid.ActualHeight:{rootGrid.ActualHeight}");
 
-
-
-
-            // 直接获取具体实现并调用 Initialize，避免反射查找不存在的属性
-            if (Services.GetService<IDialogService>() is DialogService dialogService)
+            try
             {
+                var dialogService = Services.GetRequiredService<IDialogService>();
                 dialogService.Initialize(rootGrid);
             }
-            else
+            catch (Exception ex)
             {
-                // 如果你使用了不同的实现，考虑在 IDialogService 中添加 Initialize(Grid) 方法并调用
-                MessageBox.Show("无法初始化对话服务：IDialogService 不是 DialogService 类型或为 null");
+                MessageBox.Show($"无法初始化对话服务：{ex.Message}");
             }
         }
     }

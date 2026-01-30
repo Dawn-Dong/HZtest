@@ -2,13 +2,15 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
+using System.Windows.Data;
 
-namespace HZtest.Universal
+namespace HZtest.Converters
 {
     public static class UniversalValueConversion
     {
@@ -82,7 +84,7 @@ namespace HZtest.Universal
         }
 
         /// <summary>
-        /// 批量解析轴数据（轴列表、请求项、响应值三者的索引必须一一对应）
+        /// 批量解析轴数据（轴列表、请求项、响应值三者的一一对应）
         /// </summary>
         public static List<AxisData> ParseAxisData(List<AxisEnum> axisList, BaseRequest request, int[][] responseValue)
         {
@@ -135,7 +137,7 @@ namespace HZtest.Universal
         }
 
         /// <summary>
-        /// 安全获取枚举的 Description 特性值（支持无效值回退）
+        /// 安全获取枚举的 Description 特性值（支持无效值返回）
         /// </summary>
         public static string GetDescription(this Enum value)
         {
@@ -161,5 +163,36 @@ namespace HZtest.Universal
             return defaultDescription;
         }
 
+
+
+    }
+
+
+    public class IntToBoolConverter : IValueConverter
+    {
+        // value: 当前绑定的 int (CurrentMode)
+        // parameter: RadioButton 对应的整数（通常为字符串形式）
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (parameter == null) return false;
+            if (!int.TryParse(parameter.ToString(), out var paramInt)) return false;
+            if (value is int vi)
+            {
+                return vi == paramInt;
+            }
+            return false;
+        }
+
+        // 当 RadioButton 变为 IsChecked = true 时，将 parameter 作为 int 返回给绑定属性
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (!(value is bool b) || !b) return Binding.DoNothing;
+            if (parameter == null) return Binding.DoNothing;
+            if (int.TryParse(parameter.ToString(), out var paramInt))
+            {
+                return paramInt;
+            }
+            return Binding.DoNothing;
+        }
     }
 }

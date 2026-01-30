@@ -31,6 +31,8 @@ namespace HZtest.Constants
         /// 循环启动标志偏移
         /// </summary>
         public const int CycleStart = 5;
+
+
     }
 
 }

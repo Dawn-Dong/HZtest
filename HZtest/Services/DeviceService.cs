@@ -1,4 +1,5 @@
 ﻿using HZtest.Constants;
+using HZtest.Converters;
 using HZtest.DTO;
 using HZtest.Models;
 using HZtest.Universal;
@@ -560,6 +561,93 @@ namespace HZtest.Services
             {
                 // 网络错误处理
                 return new BaseResponse<string>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
+
+        /// <summary>
+        /// 设置运行模式 - 慎用该功能
+        /// </summary>
+        /// <returns></returns>
+        public static async Task<BaseResponse<bool>> SetOperationModeAsync(DevOperationModeEnum mode)
+        {
+            try
+            {
+                var request = new BaseRequest
+                {
+                    Operation = "set_value",
+                    Items = new List<RequestItem>(),
+
+                };
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/VARIABLE@REG_G",
+                    Index = RegisterConstants.RuOrStartPause,
+                    Offset = 0,
+                    Value = 0
+
+                });
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/VARIABLE@REG_G",
+                    Index = RegisterConstants.RuOrStartPause,
+                    Offset = 1,
+                    Value = 0
+
+                });
+
+                //目前只支持Auto和Jog模式切换
+                if (mode == DevOperationModeEnum.Auto)
+                {
+
+                    request.Items.Add(new RequestItem
+                    {
+                        Path = "/MACHINE/CONTROLLER/VARIABLE@REG_G",
+                        Index = RegisterConstants.RuOrStartPause,
+                        Offset = 0,
+                        Value = 1
+
+                    });
+                }
+
+                if (mode == DevOperationModeEnum.Jog)
+                {
+                    request.Items.Add(new RequestItem
+                    {
+                        Path = "/MACHINE/CONTROLLER/VARIABLE@REG_G",
+                        Index = RegisterConstants.RuOrStartPause,
+                        Offset = 1,
+                        Value = 1
+
+                    });
+                }
+
+                var result = await ApiClient.PostAsync<BaseResponse<bool[]>>($"/v1/{CurrentSNCode}/data", request);
+                // 安全提取第一个 bool 值
+                if (result.Value.Any(x => x == false))
+                {
+
+                    return new BaseResponse<bool>
+                    {
+                        Code = -1,
+                        Status = "设置失败",
+                        Value = false,
+                    };
+                }
+                return new BaseResponse<bool>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = true,
+                    // 可选：如果 API 成功但无数据，是否算失败？按需处理
+                };
+            }
+            catch (Exception ex)
+            {
+                // 网络错误处理
+                return new BaseResponse<bool>
                 {
                     Status = $"错误: {ex.Message}",
                 };
