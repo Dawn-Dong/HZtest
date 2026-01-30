@@ -1,0 +1,17 @@
+﻿<Application x:Class="HZtest.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:HZtest">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- 合并矢量图资源 -->
+                <ResourceDictionary Source="/Resources-资源/Icons.xaml"/>
+                <!-- 引入资源字典 -->
+                <ResourceDictionary Source="Resources-资源/Styles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            
+            
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

@@ -1,0 +1,76 @@
+﻿<Page x:Class="HZtest.DevConnection"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Title="DevConnection" Height="450" Width="800">
+
+    <Grid Margin="20">
+        <!-- 整体边距 -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- 标题行 -->
+            <RowDefinition Height="20"/>
+            <!-- 间距 -->
+            <RowDefinition Height="Auto"/>
+            <!-- 输入行 -->
+            <RowDefinition Height="20"/>
+            <!-- 间距 -->
+            <RowDefinition Height="Auto"/>
+            <!-- 按钮行 -->
+            <RowDefinition Height="20"/>
+            <!-- 间距 -->
+            <RowDefinition Height="Auto"/>
+            <!-- 提示行 -->
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <!-- 标签列 -->
+            <ColumnDefinition Width="*"/>
+            <!-- 输入框列 -->
+            <ColumnDefinition Width="Auto"/>
+            <!-- 按钮列 -->
+        </Grid.ColumnDefinitions>
+
+        <!-- 标题 -->
+        <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
+                   Text="设备连接测试" 
+                   FontSize="24" 
+                   FontWeight="Bold"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,20"/>
+
+        <!-- SN码标签 -->
+        <TextBlock Grid.Row="2" Grid.Column="0"
+                   Text="设备SN码：" 
+                   FontSize="18" 
+                   VerticalAlignment="Center"
+                   Margin="0,0,10,0"/>
+
+        <!-- SN码输入框 -->
+        <TextBox Grid.Row="2" Grid.Column="1"
+                 x:Name="SnTextBox" 
+                 Height="30"
+                 VerticalContentAlignment="Center"
+                 Padding="5,0"/>
+
+        <!-- 测试按钮 -->
+        <Button Grid.Row="2" Grid.Column="2"
+                Content="测试连接状态" 
+                x:Name="TestConnectionButton" 
+                Click="TestConnectionButton_Click"
+                FontSize="20" 
+                Height="46" 
+                Width="168"
+                Margin="10,0,0,0"/>
+
+        <!-- 提示信息 -->
+        <Label Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3"
+               Content="先测试连接状态" 
+               x:Name="PromptLabel"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center"
+               Height="30" 
+               Width="Auto"
+               Margin="0,10,0,0"/>
+    </Grid>
+</Page>
