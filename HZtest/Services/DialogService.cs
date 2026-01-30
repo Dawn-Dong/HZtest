@@ -1,10 +1,18 @@
 ﻿using HZtest.Interfaces_接口定义;
 using HZtest.Services;
 using HZtest.Views.Dialogs;
+using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Threading;
+using System.Windows.Controls.Primitives;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
 
 public class DialogService : IDialogService
 {
@@ -16,6 +24,7 @@ public class DialogService : IDialogService
     {
         
     }
+
     public void Initialize(Grid rootGrid)
     {
         if (rootGrid == null)
@@ -24,13 +33,17 @@ public class DialogService : IDialogService
         _rootGrid = rootGrid;
         InitializeOverlay();
     }
+
     private void InitializeOverlay()
     {
-        // 遮罩层（半透明）
+        // 遮罩层（半透明），拉伸覆盖整个 RootGrid
         _overlay = new Grid
         {
             Background = new SolidColorBrush(Color.FromArgb(128, 0, 0, 0)),
-            Visibility = Visibility.Collapsed
+            Visibility = Visibility.Collapsed,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch,
+            IsHitTestVisible = true
         };
 
         // 对话框容器（居中）
@@ -42,10 +55,24 @@ public class DialogService : IDialogService
         };
 
         _overlay.Children.Add(_container);
+
+        // 如果 RootGrid 有行/列，设置覆盖所有行列
+        if (_rootGrid.RowDefinitions?.Count > 0)
+            Grid.SetRowSpan(_overlay, _rootGrid.RowDefinitions.Count);
+        if (_rootGrid.ColumnDefinitions?.Count > 0)
+            Grid.SetColumnSpan(_overlay, _rootGrid.ColumnDefinitions.Count);
+
+        // 确保在最上层
+        Panel.SetZIndex(_overlay, 9999);
+
         _rootGrid.Children.Add(_overlay);
     }
+
     public async Task<TResult> ShowDialogAsync<TResult>(string dialogName, object parameter = null)
     {
+        if (_overlay == null || _container == null)
+            throw new InvalidOperationException("DialogService 未初始化。请在 MainWindow.Loaded 中调用 dialogService.Initialize(rootGrid)。");
+
         var dialog = CreateDialog(dialogName);
 
         // 如果实现了 IDialogAware，传递参数
@@ -62,12 +89,21 @@ public class DialogService : IDialogService
         // 监听关闭事件
         if (dialog is FrameworkElement fe && fe.DataContext is IDialogAware aware)
         {
-            aware.RequestClose += (s, result) =>
+            EventHandler<object> handler = null;
+            handler = (s, result) =>
             {
+                // 移除并完成任务
                 _overlay.Visibility = Visibility.Collapsed;
                 _container.Content = null;
+                aware.RequestClose -= handler;
                 tcs.SetResult((TResult)result);
             };
+            aware.RequestClose += handler;
+        }
+        else
+        {
+            // 如果 dialog 没有 IDialogAware，仍需防止任务永远不完成 — 可根据需要抛异常或返回默认
+            throw new InvalidOperationException("对话框未实现 IDialogAware，无法获取关闭事件。");
         }
 
         return await tcs.Task;
@@ -81,9 +117,6 @@ public class DialogService : IDialogService
             _ => throw new ArgumentException($"未知对话框: {name}")
         };
     }
-
-
-
 
     public Task<bool> ShowConfirmAsync(string message, string title = "确认")
     {

@@ -6,9 +6,7 @@
       xmlns:local="clr-namespace:HZtest.View"
       xmlns:vm="clr-namespace:HZtest.ViewModels"
       mc:Ignorable="d" 
-      
       d:DesignHeight="450" d:DesignWidth="800"
-      
       Title="HomePage">
 
     <!-- 设置DataContext --><!--

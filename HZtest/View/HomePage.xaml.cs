@@ -20,22 +20,12 @@ namespace HZtest.View
     /// </summary>
     public partial class HomePage : Page
     {
-        public HomePage()
+        public HomePage(HomePageViewModel viewModel)
         {
             InitializeComponent();
             // 页面加载时启动监控
-
-
-            //// 调试：检查 DataContext 变化
-            //this.DataContextChanged += (s, e) =>
-            //{
-            //    var vm = e.NewValue as HomePageViewModel;
-            //    MessageBox.Show($"DataContext 已设置: {vm != null}\nSNCode: {vm?.SNCode}");
-            //};
-
-
-
-            DataContext = new HomePageViewModel(dialogService, messageService);
+            // 使用 DI 注入的 ViewModel 作为 DataContext，避免在页面中 new 未定义的服务
+            DataContext = viewModel;
             // 页面卸载时停止监控
             this.Unloaded += (s, e) =>
             {

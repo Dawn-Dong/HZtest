@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:HZtest"
         mc:Ignorable="d"
-        Title="MainWindow" Height="550" Width="990">
+        Title="华中数控" Height="550" Width="990">
     <Grid Name="RootGrid">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -28,7 +28,7 @@
 
         <Frame Grid.Column="1"  Grid.RowSpan="6" x:Name="MainFrame" NavigationUIVisibility="Hidden"/>
         <TextBlock x:Name="StatusTextBlock" Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="2" FontSize="16" FontWeight="Bold"  />
-        
+
     </Grid>
-    
+
 </Window>

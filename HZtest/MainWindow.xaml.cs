@@ -1,6 +1,7 @@
 ﻿using HZtest.View;
-using System.Text;
+using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
+using System.Text;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
@@ -20,23 +21,51 @@ namespace HZtest
         public MainWindow()
         {
             InitializeComponent();
-            // 启动时加载 DevConnection 页面
-            MainFrame.Content = new DevConnection();
+            // App.OnStartup 中已经将起始页设置为 DevConnection，这里不强制 new
+            // MainFrame.Content = new DevConnection();
         }
 
-        
         /// <summary>
-        ///在 DevConnection 验证成功后调用此方法
+        /// 在 DevConnection 验证成功后由此方法导航到 HomePage（通过 DI 创建并初始化）
         /// </summary>
-        /// <param name="SNCode"></param>
         public void NavigateToHomePage(string SNCode)
         {
-            MainFrame.Content = new HomePage();
-            StatusTextBlock.Text = $"当前操作设备SN码:{SNCode}";
-            StatusTextBlock.Foreground = Brushes.Orange;
+            // 从全局 ServiceProvider 获取由容器创建的 HomePage 与 ViewModel
+            var viewModel = App.Services.GetRequiredService<ViewModels.HomePageViewModel>();
+            var homePage = App.Services.GetRequiredService<HomePage>();
 
+            // 初始化 ViewModel（如果需要传 SN 并触发加载）
+            viewModel.SNCode = SNCode;
+            viewModel.Initialize(SNCode);
+
+            // 使用容器创建的页面实例进行导航
+            MainFrame.Content = homePage;
+
+            if (StatusTextBlock != null)
+            {
+                StatusTextBlock.Text = $"当前操作设备SN码:{SNCode}";
+                StatusTextBlock.Foreground = Brushes.Orange;
+            }
         }
 
+        /// <summary>
+        /// 重载：如果调用方已经创建并初始化了 HomePage 实例，直接显示它（避免再次创建新实例）
+        /// </summary>
+        public void NavigateToHomePage(HomePage homePage, string SNCode)
+        {
+            if (homePage == null)
+            {
+                NavigateToHomePage(SNCode);
+                return;
+            }
 
+            MainFrame.Content = homePage;
+
+            if (StatusTextBlock != null)
+            {
+                StatusTextBlock.Text = $"当前操作设备SN码:{SNCode}";
+                StatusTextBlock.Foreground = Brushes.Orange;
+            }
+        }
     }
 }

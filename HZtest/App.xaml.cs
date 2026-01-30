@@ -76,10 +76,21 @@ namespace HZtest
                 MessageBox.Show("MainWindow.xaml 必须包含 Name=\"RootGrid\" 的 Grid");
                 return;
             }
+            Console.WriteLine($"rootGrid.ActualWidth:{rootGrid.ActualWidth} ,rootGrid.Children.Count:{rootGrid.Children.Count}  , rootGrid.ActualHeight:{rootGrid.ActualHeight}");
 
-            var dialogService = Services.GetRequiredService<IDialogService>() as DialogService;
-            // 如果DialogService需要RootGrid，通过属性或方法设置：
-            dialogService?.GetType().GetProperty("RootGrid")?.SetValue(dialogService, rootGrid);
+
+
+
+            // 直接获取具体实现并调用 Initialize，避免反射查找不存在的属性
+            if (Services.GetService<IDialogService>() is DialogService dialogService)
+            {
+                dialogService.Initialize(rootGrid);
+            }
+            else
+            {
+                // 如果你使用了不同的实现，考虑在 IDialogService 中添加 Initialize(Grid) 方法并调用
+                MessageBox.Show("无法初始化对话服务：IDialogService 不是 DialogService 类型或为 null");
+            }
         }
     }
 }

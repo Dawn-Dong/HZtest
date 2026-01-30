@@ -23,8 +23,6 @@ namespace HZtest
     /// </summary>
     public partial class DevConnection : Page
     {
-       // private readonly DeviceService _deviceService = new();
-
         public DevConnection()
         {
             InitializeComponent();
@@ -32,13 +30,9 @@ namespace HZtest
         /// <summary>
         /// 按钮点击事件处理程序
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private async void TestConnectionButton_Click(object sender, RoutedEventArgs e)
         {
-            // 获取TextBox中的值
             string snCode = SnTextBox.Text.Trim();
-            // 检查输入是否为空
             if (string.IsNullOrEmpty(snCode))
             {
                 MessageBox.Show("请输入设备SN码！", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -48,36 +42,28 @@ namespace HZtest
             var result = await DeviceService.GetDeviceInfoAsync(snCode);
             TestConnectionButton.IsEnabled = true;
 
-
-
             if (result.Code == 0)
             {
                 DeviceService.CurrentSNCode = snCode;
-                // ✅ 从 App 获取服务实例
-                // 从DI获取HomePage和ViewModel
+
+                // 从 DI 创建 HomePage 和 ViewModel，或者直接创建并初始化后传给 MainWindow（避免不同实例）
                 var homePage = App.Services.GetRequiredService<HomePage>();
                 var viewModel = App.Services.GetRequiredService<HomePageViewModel>();
-                // 传递 SNCode（触发属性 setter 中的加载逻辑）
-                homePage.DataContext = viewModel;  // 绑定
+
+                // 绑定并初始化 ViewModel
+                homePage.DataContext = viewModel;
                 viewModel.SNCode = snCode;
                 viewModel.Initialize(snCode);
-               
-                // ✅ 创建 HomePageViewModel 并注入服务
-                // 获取 MainWindow 实例并切换页面
+
+                // 使用 MainWindow 的重载方法直接传入 homePage 实例进行导航（保证显示的是已初始化的实例）
                 var mainWindow = Application.Current.MainWindow as MainWindow;
-                mainWindow?.NavigateToHomePage(snCode);
+                mainWindow?.NavigateToHomePage(homePage, snCode);
             }
             else
             {
-                PromptLabel.Content = "连接失败检查设备连接状态和地址是否正确";
+                PromptLabel.Content = "连接失败，检查设备连接状态和地址是否正确";
                 PromptLabel.Foreground = Brushes.Red;
             }
-
-
-
-
         }
-
-
     }
 }
