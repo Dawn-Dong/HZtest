@@ -50,7 +50,8 @@ namespace HZtest
 
         private void ConfigureServices(IServiceCollection services)
         {
-            // 注册配置
+            // 注册配置  单例模式 注入    
+            // 构造函数注入，自动获得那个唯一的 Configuration 实例
             services.AddSingleton(Configuration);
 
             // 注册服务（根据你的实际代码调整）
@@ -59,16 +60,23 @@ namespace HZtest
             // DialogService 延迟初始化（不在这里传RootGrid）
             services.AddSingleton<IDialogService, DialogService>();
 
-            // ViewModels - 不传递SN码参数，通过属性设置
+
+
+            // ViewModels - 不传递SN码参数，通过属性设置  
+            //每次请求 Services.GetRequiredService<HomePageViewModel>(); 都创建一个全新的实例。
             services.AddTransient<HomePageViewModel>();
-            //services.AddTransient<DevConnectionViewModel>();
 
             // Views
             services.AddTransient<MainWindow>();
             services.AddTransient<DevConnection>();
             services.AddTransient<HomePage>();
+            services.AddTransient<FileOperationsPage>();
         }
 
+        /// <summary>
+        /// 初始化 DialogService对话服务并确保其拥有对 RootGrid 的name
+        /// </summary>
+        /// <param name="mainWindow"></param>
         private void InitializeDialogService(MainWindow mainWindow)
         {
             var rootGrid = mainWindow.FindName("RootGrid") as Grid;

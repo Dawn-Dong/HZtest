@@ -365,8 +365,6 @@ namespace HZtest.ViewModels
                         _messageService.ShowError($"{setResult.Status}");
                     }
 
-
-
                 }
                 else
                 {
@@ -378,12 +376,6 @@ namespace HZtest.ViewModels
             {
                 _messageService.ShowError($"对话框异常: {ex.Message}");
             }
-
-
-
-
-
-
 
 
         }

@@ -24,8 +24,10 @@
         </Grid.ColumnDefinitions>
 
         <Border Grid.Column="0" Background="LightGray" Grid.RowSpan="6" />
-        <Button Content="主页"  Grid.Column="0"  Grid.Row="0"  />
-
+        <Button Content="主页"  Grid.Column="0"  Grid.Row="0"  Click="HomeButton_Click"/>
+        <Button Content="文件"  Grid.Column="0"  Grid.Row="1"  Click="FileButton_Click"/>
+        
+        
         <Frame Grid.Column="1"  Grid.RowSpan="6" x:Name="MainFrame" NavigationUIVisibility="Hidden"/>
         <TextBlock x:Name="StatusTextBlock" Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="2" FontSize="16" FontWeight="Bold"  />
 

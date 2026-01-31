@@ -53,7 +53,7 @@ namespace HZtest
                 // 绑定并初始化 ViewModel
                 homePage.DataContext = viewModel;
                 viewModel.SNCode = snCode;
-                viewModel.Initialize(snCode);
+               // viewModel.Initialize(snCode);
 
                 // 使用 MainWindow 的重载方法直接传入 homePage 实例进行导航（保证显示的是已初始化的实例）
                 var mainWindow = Application.Current.MainWindow as MainWindow;

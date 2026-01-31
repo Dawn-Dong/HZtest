@@ -21,8 +21,6 @@ namespace HZtest
         public MainWindow()
         {
             InitializeComponent();
-            // App.OnStartup 中已经将起始页设置为 DevConnection，这里不强制 new
-            // MainFrame.Content = new DevConnection();
         }
 
         /// <summary>
@@ -67,5 +65,26 @@ namespace HZtest
                 StatusTextBlock.Foreground = Brushes.Orange;
             }
         }
+
+
+        // 点击 “文件” 按钮时在右侧 Frame 显示 FileOperationsPage
+        private void FileButton_Click(object sender, RoutedEventArgs e)
+        {
+            // 直接 new 页面并显示；如果你通过 DI 管理页面，可以改为从 App.Services 获取实例
+            MainFrame.Content = App.Services.GetService<FileOperationsPage>();
+            // 或者： MainFrame.Navigate(new FileOperationsPage());
+        }
+
+        // 可选：主页按钮导航示例（如果需要）
+        private void HomeButton_Click(object sender, RoutedEventArgs e)
+        {
+            // 如果你有 HomePage 的 DI 实例化逻辑，使用 NavigateToHomePage 或直接 new
+            var home = App.Services.GetService<HomePage>();
+            if (home != null)
+                MainFrame.Content = home;
+        }
+
+
+
     }
 }

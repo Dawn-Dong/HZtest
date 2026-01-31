@@ -41,9 +41,6 @@ namespace HZtest.Services
 
         static DeviceService()
         {
-            // 直接通过索引器获取字符串
-            //var settings = App.Config.GetSection("ApiSettings").Get<AppSettings>() ?? new AppSettings();
-            //_http.BaseAddress = new Uri(settings.BaseUrl);
 
         }
         /// <summary>
