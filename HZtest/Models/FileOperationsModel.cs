@@ -13,6 +13,10 @@ namespace HZtest.Models
         /// 正在运行的文件
         /// </summary>
         public string RunningFile { get; set; } = string.Empty;
+        /// <summary>
+        /// 正在运行的文件详情
+        /// </summary>
+        public string RunningDetailsFile { get; set; } = string.Empty;
 
     }
 }

@@ -3,6 +3,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:avalonedit="http://icsharpcode.net/sharpdevelop/avalonedit"
       xmlns:local="clr-namespace:HZtest.View"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
@@ -29,7 +30,32 @@
                 </TextBlock.Foreground>
             </TextBlock>
         </StackPanel>
-        
+        <!-- 只读模式性能更好 -->
+        <!-- 虚拟化 -->
+        <!--<TextBox 
+            Grid.Row="2" Grid.Column="0" 
+                IsReadOnly="True"             
+                IsReadOnlyCaretVisible="False"
+                VirtualizingPanel.IsVirtualizing="True" Background="#FFCBD2CA" 
+            TextWrapping="NoWrap"
+            AcceptsReturn="True"
+            ScrollViewer.HorizontalScrollBarVisibility="Auto"
+            ScrollViewer.VerticalScrollBarVisibility="Auto" 
+            Text="{Binding CurrentRunningFileDetails}"
+            />-->
+        <avalonedit:TextEditor 
+            Grid.Row="2" Grid.Column="0"
+           x:Name="GcodeEditor"
+            IsReadOnly="True"
+            Background="#FFCBD2CA"
+            FontFamily="Consolas"
+            FontSize="12"
+            ShowLineNumbers="True"    
+            LineNumbersForeground="Gray" 
+            WordWrap="False"
+            />
 
+
+        <Button Grid.Row="1" Grid.Column="0" Content="读取运行文件详情" Width="120" Height="40" Margin="10" Command="{Binding FileDetailsCommand}"/>
     </Grid>
 </Page>

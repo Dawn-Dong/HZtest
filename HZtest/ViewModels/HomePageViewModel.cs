@@ -27,7 +27,6 @@ namespace HZtest.ViewModels
                 {
                     _snCode = value;
                     OnPropertyChanged();
-                    // ✅ 设置 SNCode 时自动加载数据
                 }
             }
         }

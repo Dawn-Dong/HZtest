@@ -9,6 +9,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Net.Http;
+using System.Net;
 
 namespace HZtest
 {
@@ -90,6 +92,10 @@ namespace HZtest
                     client.BaseAddress = new Uri(apiSettings.BaseUrl);
                 }
                 client.Timeout = TimeSpan.FromSeconds(30);
+            }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                // 关键：自动解压，否则读到的是压缩字节（可能显示为 % 开头）
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
             }).SetHandlerLifetime(TimeSpan.FromMinutes(5));
 
             // DeviceService：保持单例以保存 SN 状态（可根据需要改为 transient）

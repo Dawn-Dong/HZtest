@@ -6,6 +6,7 @@ using HZtest.Universal;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -564,7 +565,59 @@ namespace HZtest.Services
             }
         }
 
+        /// <summary>
+        /// 获取当前运行文件名称详情
+        /// </summary>
+        /// <param name="mode"></param>
+        /// <returns></returns>
+        public async Task<BaseResponse<FileOperationsModel>> GetTheCurrentRunningDetailsFileAsync(string filsName)
+        {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<FileOperationsModel> { Status = "未设置设备 SNCode" };
+            }
+            if (string.IsNullOrEmpty(filsName))
+            {
+                return new BaseResponse<FileOperationsModel> { Status = "文件名称为空" };
+            }
+            try
+            {
+                var analysisFilsName = Path.GetFileName(filsName);
+                if (string.IsNullOrEmpty(analysisFilsName))
+                {
+                    return new BaseResponse<FileOperationsModel> { Status = "文件名称解析失败" };
+                }
 
+                //和其他的不太一样参数传递方式不一样
+                var path = $"/v1/{CurrentSNCode}/file?key={analysisFilsName}&path=/MACHINE/CONTROLLER/FILE";
+                // 直接读取原始字符串响应（多行文本）
+                var result = await _apiClient.GetAsync<string>(path).ConfigureAwait(false);
+
+                var fileOperationsModel = new FileOperationsModel();
+                fileOperationsModel.RunningDetailsFile = result ?? string.Empty;
+                var response = new BaseResponse<FileOperationsModel>()
+                {
+                    Code = 0,
+                    Status = "成功"
+                };
+
+                if (string.IsNullOrEmpty(result))
+                {
+                    response.Code = -1;
+                    response.Status = "文件内容为空";
+                }
+                response.Value = fileOperationsModel;
+                return response;
+
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<FileOperationsModel>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
 
         #endregion
 

@@ -24,12 +24,22 @@ namespace HZtest.View
             InitializeComponent();
             // 使用 DI 注入的 ViewModel 作为 DataContext，避免在页面中 new 未定义的服务
             DataContext = viewModel;
+
+            // 立即绑定回调，确保无论页面如何被创建/显示都能接收到文本更新。
+            if (viewModel != null)
+            {
+                viewModel.FileDetailsChanged += OnFileDetailsChanged;
+            }
+
             // 页面卸载时停止监控
             this.Unloaded += (s, e) =>
             {
                 (this.DataContext as FileOperationsPageViewModel)?.Cleanup();
             };
-
+        }
+        private void OnFileDetailsChanged(string text)
+        {
+            Dispatcher.BeginInvoke(() => GcodeEditor.Text = text ?? string.Empty);
         }
     }
 }
