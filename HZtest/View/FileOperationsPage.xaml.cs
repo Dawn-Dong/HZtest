@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HZtest.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Windows;
@@ -18,9 +19,17 @@ namespace HZtest.View
     /// </summary>
     public partial class FileOperationsPage : Page
     {
-        public FileOperationsPage()
+        public FileOperationsPage(FileOperationsPageViewModel viewModel)
         {
             InitializeComponent();
+            // 使用 DI 注入的 ViewModel 作为 DataContext，避免在页面中 new 未定义的服务
+            DataContext = viewModel;
+            // 页面卸载时停止监控
+            this.Unloaded += (s, e) =>
+            {
+                (this.DataContext as FileOperationsPageViewModel)?.Cleanup();
+            };
+
         }
     }
 }

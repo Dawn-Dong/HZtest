@@ -73,12 +73,13 @@ namespace HZtest
 
             // ViewModels - 不传递SN码参数，通过属性设置  
             services.AddTransient<HomePageViewModel>();
-
+            services.AddTransient<FileOperationsPageViewModel>();
             // Views
             services.AddTransient<MainWindow>();
             services.AddTransient<DevConnection>();
             services.AddTransient<HomePage>();
             services.AddTransient<FileOperationsPage>();
+
 
             // ApiClient: 使用 Typed Client，通过配置设置 BaseAddress；SetHandlerLifetime 控制 handler 重用周期
             var apiSettings = Configuration.GetSection("ApiSettings").Get<AppSettings>() ?? new AppSettings();

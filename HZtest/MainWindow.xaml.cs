@@ -71,7 +71,16 @@ namespace HZtest
         private void FileButton_Click(object sender, RoutedEventArgs e)
         {
             // 直接 new 页面并显示；如果你通过 DI 管理页面，可以改为从 App.Services 获取实例
-            MainFrame.Content = App.Services.GetService<FileOperationsPage>();
+            var fileOperationsPage = App.Services.GetService<FileOperationsPage>();
+            if (fileOperationsPage.DataContext is FileOperationsPageViewModel viewModel)
+            {
+                viewModel.Initialize();
+            }
+            MainFrame.Content = fileOperationsPage;
+
+
+
+
             // 或者： MainFrame.Navigate(new FileOperationsPage());
         }
 
@@ -86,7 +95,6 @@ namespace HZtest
                 viewModel.Initialize();
             }
             MainFrame.Content = homePage;
-
 
         }
 

@@ -38,6 +38,7 @@ namespace HZtest.Services
 
         public void ClearSNCode() => _currentSNCode = null;
 
+        #region 主页面操作接口
         /// <summary>
         /// 获取连接状态
         /// </summary>
@@ -519,5 +520,56 @@ namespace HZtest.Services
                 };
             }
         }
+        #endregion
+        #region 文件操作页面接口
+        /// <summary>
+        /// 获取当前运行文件名称
+        /// </summary>
+        /// <param name="mode"></param>
+        /// <returns></returns>
+        public async Task<BaseResponse<FileOperationsModel>> GetTheCurrentRunningFileAsync()
+        {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<FileOperationsModel> { Status = "未设置设备 SNCode" };
+            }
+            try
+            {
+                var request = new BaseRequest
+                {
+                    Operation = "get_value",
+                    Items = new List<RequestItem>(),
+                };
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/PROGRAM",
+                });
+
+                var result = await _apiClient.PostAsync<BaseResponse<string[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                var fileOperationsModel = new FileOperationsModel();
+                fileOperationsModel.RunningFile = result?.Value.ExtractFirstValue() ?? string.Empty;
+                return new BaseResponse<FileOperationsModel>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = fileOperationsModel,
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<FileOperationsModel>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
+
+
+
+        #endregion
+
+
+
+
     }
 }

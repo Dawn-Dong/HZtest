@@ -163,6 +163,33 @@ namespace HZtest.Converters
             return defaultDescription;
         }
 
+        /// <summary>
+        /// 从 string[][] 中提取单一值（取 [0][0]）
+        /// </summary>
+        public static string ExtractFirstValue(this string[][] array)
+        {
+            if (array?.Length > 0 && array[0]?.Length > 0)
+                return array[0][0];
+            return null;
+        }
+
+        /// <summary>
+        /// 泛型提取并转换为目标类型
+        /// </summary>
+        public static T ExtractFirstValue<T>(this string[][] array, T defaultValue = default)
+        {
+            var str = array.ExtractFirstValue();
+            if (string.IsNullOrEmpty(str)) return defaultValue;
+
+            try
+            {
+                return (T)Convert.ChangeType(str, typeof(T));
+            }
+            catch
+            {
+                return defaultValue;
+            }
+        }
 
 
     }
