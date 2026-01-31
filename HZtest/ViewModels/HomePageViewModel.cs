@@ -61,7 +61,8 @@ namespace HZtest.ViewModels
 
         // ===== 依赖服务（构造函数注入）=====
         private readonly IDialogService _dialogService;
-        private readonly IMessageService _messageService;
+        private readonly IMessageService _message_service;
+        private readonly DeviceService _deviceService;
         // ===== 状态属性（支持命令启用/禁用）=====
         private bool _isBusy;
         public bool IsBusy
@@ -70,21 +71,22 @@ namespace HZtest.ViewModels
             private set { _isBusy = value; OnPropertyChanged(); }
         }
         // 构造函数启动监控
-        public HomePageViewModel(IDialogService dialogService, IMessageService messageService)
+        public HomePageViewModel(IDialogService dialogService, IMessageService messageService, DeviceService deviceService)
         {
-            _dialogService = dialogService;
-            _messageService = messageService;
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _message_service = messageService ?? throw new ArgumentNullException(nameof(messageService));
+            _deviceService = deviceService ?? throw new ArgumentNullException(nameof(deviceService));
             StartCommand = new RelayCommand(async () => await ExecuteStartAsync());
             PauseCommand = new RelayCommand(async () => await ExecutePauseAsync());
             OpenModeSelectionCommand = new AsyncRelayCommand(OpenModeSelection, () => !IsBusy);
             //StartDataMonitoring();
         }
-
+        /// <summary>
+        /// 启动数据监控
+        /// </summary>
         // 添加初始化方法，由 DevConnection 调用
-        public void Initialize(string snCode)
+        public void Initialize()
         {
-            SNCode = snCode;
-
             // 启动监控（确保 SNCode 已设置）
             StartDataMonitoring();
 
@@ -319,7 +321,7 @@ namespace HZtest.ViewModels
                 State = true,
 
             };
-            var startState = await DeviceService.SetStartPauseStateAsync(startStopStateDto);
+            var startState = await _deviceService.SetStartPauseStateAsync(startStopStateDto);
             //暂不进行消息提示  方案参考 消息服务
         }
         /// <summary>
@@ -334,7 +336,7 @@ namespace HZtest.ViewModels
                 State = true,
 
             };
-            var stopState = await DeviceService.SetStartPauseStateAsync(startStopStateDto);
+            var stopState = await _deviceService.SetStartPauseStateAsync(startStopStateDto);
             //暂不进行消息提示  方案参考 消息服务
 
         }
@@ -355,26 +357,26 @@ namespace HZtest.ViewModels
                 {
                     // 用户点击了确定
                     CurrentModeValue = result.Value; // 更新本地状态
-                    var setResult = await DeviceService.SetOperationModeAsync((DevOperationModeEnum)CurrentModeValue);
+                    var setResult = await _deviceService.SetOperationModeAsync((DevOperationModeEnum)CurrentModeValue);
                     if (setResult.Code ==0)
                     {
-                        _messageService.ShowMessage($"设置成功");
+                        _message_service.ShowMessage($"设置成功");
                     }
                     else
                     {
-                        _messageService.ShowError($"{setResult.Status}");
+                        _message_service.ShowError($"{setResult.Status}");
                     }
 
                 }
                 else
                 {
                     // 用户点击了取消
-                    _messageService.ShowMessage("操作已取消");
+                    _message_service.ShowMessage("操作已取消");
                 }
             }
             catch (Exception ex)
             {
-                _messageService.ShowError($"对话框异常: {ex.Message}");
+                _message_service.ShowError($"对话框异常: {ex.Message}");
             }
 
 
@@ -388,7 +390,7 @@ namespace HZtest.ViewModels
         private async Task AllAxisInformation()
         {
             // 1. 调用你的接口获取数据
-            var allAxisData = await DeviceService.BatchGetAllActualAndRemainingFeedAsync();
+            var allAxisData = await _deviceService.BatchGetAllActualAndRemainingFeedAsync();
 
             // 2. 更新属性（自动通知UI）
             XAxisActualFeedRateValue = ValueConversion(allAxisData.Value[0].ActualFeedRate).ToString("F3");
@@ -414,7 +416,7 @@ namespace HZtest.ViewModels
         /// <returns></returns>
         private async Task GetStartPauseButtonStateAsync()
         {
-            var startStopState = await DeviceService.GetStartPauseStateAsync();
+            var startStopState = await _deviceService.GetStartPauseStateAsync();
 
             StartStartStatus = startStopState.Value.CycleStart ? "Enable" : "Default";
             PauseStartStatus = startStopState.Value.FeedHold ? "Enable" : "Default";
@@ -426,13 +428,13 @@ namespace HZtest.ViewModels
 
         private async Task GetActualSpindleSpeedAsync()
         {
-            var actualSpindleSpeed = await DeviceService.GetActualSpindleSpeedAsync();
+            var actualSpindleSpeed = await _deviceService.GetActualSpindleSpeedAsync();
             MainAxisActualSpeed = actualSpindleSpeed.Value.ToString() ?? "0";
         }
 
         private async Task GetOperationModeAsync()
         {
-            var cs = await DeviceService.GetOperationModeAsync();
+            var cs = await _deviceService.GetOperationModeAsync();
             OperationMode = cs.Value.ToString();
         }
 

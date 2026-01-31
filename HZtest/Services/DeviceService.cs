@@ -5,432 +5,293 @@ using HZtest.Models;
 using HZtest.Universal;
 using Microsoft.Extensions.Configuration;
 using System;
-using System.Diagnostics.Metrics;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace HZtest.Services
 {
-    // 只做一件事：调用API
-    public static class DeviceService
+    /// <summary>
+    /// 注入式 DeviceService —— 不再使用静态方法/字段，便于 DI/测试/并发控制
+    /// 注册建议：Singleton（保持 CurrentSNCode 状态）或根据需求调整为 Scoped/Transient
+    /// </summary>
+    public class DeviceService
     {
-        //private static readonly HttpClient _http = new HttpClient();
+        private readonly ApiClient _apiClient;
 
+        // 保存当前 SN（实例字段，不再静态）
+        private string? _currentSNCode;
+        public string? CurrentSNCode => _currentSNCode;
 
-
-        private static string _currentSNCode; // 私有字段存储实际值
-        // 只允许在为空时写入
-        public static string CurrentSNCode
+        public DeviceService(ApiClient apiClient)
         {
-            get => _currentSNCode;
-            set
-            {
-                // 只有在为空时才能赋值
-                if (string.IsNullOrEmpty(_currentSNCode))
-                {
-                    _currentSNCode = value;
-                }
-                // 否则忽略（已设置过，禁止修改）
-            }
+            _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
         }
 
-
-        static DeviceService()
+        public void SetCurrentSNCode(string snCode)
         {
-
-        }
-        /// <summary>
-        /// 新增：获取当前保存的SNCode
-        /// </summary>
-        public static string GetCurrentSNCode()
-        {
-            return CurrentSNCode ?? "未设置";
+            _currentSNCode = snCode;
         }
 
-        // 可选：如果需要强制重置，添加额外方法
-        public static void ResetSNCode(string newSNCode)
-        {
-            _currentSNCode = newSNCode;
-        }
+        public string GetCurrentSNCode() => CurrentSNCode ?? "未设置";
 
-        // 可选：清空以便重新设置
-        public static void ClearSNCode()
-        {
-            _currentSNCode = null;
-        }
-
+        public void ClearSNCode() => _currentSNCode = null;
 
         /// <summary>
         /// 获取连接状态
         /// </summary>
-        /// <param name="snCode">设备SN码</param>
-        /// <returns>连接状态  </returns>
-        public static async Task<BaseResponse<string>> GetDeviceInfoAsync(string snCode)
+        public async Task<BaseResponse<string>> GetDeviceInfoAsync(string snCode)
         {
             try
             {
-
-
-
-                // 直接调用GET，无请求体
-                var json = await ApiClient.GetAsync<BaseResponse<string>>($"/tools/test/{snCode}");
-
-                // // 发送GET请求
-                // var response = await _http.GetAsync($"/tools/test/{snCode}");
-
-
-                // // 确保成功
-                //response.EnsureSuccessStatusCode();
-
-                // // 解析响应
-                // var json = await response.Content.ReadAsStringAsync();
-
-                return await ApiClient.GetAsync<BaseResponse<string>>($"/tools/test/{snCode}") ?? new BaseResponse<string>();
+                var result = await _apiClient.SendAsync<BaseResponse<string>>(HttpMethod.Get, $"/tools/test/{snCode}").ConfigureAwait(false);
+                return result ?? new BaseResponse<string>();
             }
             catch (HttpRequestException ex)
             {
-                // 网络错误处理
                 return new BaseResponse<string>
                 {
                     Status = "接口错误",
                     Value = $"网络错误: {ex.Message}"
                 };
-
             }
         }
+
         /// <summary>
         /// 单个获取轴实际进给数据
         /// </summary>
-        /// <param name="axis">要获取的轴</param>
-        public static async Task<BaseResponse<AxisData>> GetActualFeedAsync(AxisEnum axis)
+        public async Task<BaseResponse<AxisData>> GetActualFeedAsync(AxisEnum axis)
         {
             try
             {
-                var BaseResponse = new BaseResponse<AxisData>();
-                var shuz = axis.ToString().ToUpper();
+                var baseResp = new BaseResponse<AxisData>();
                 var request = new BaseRequest
                 {
                     Operation = "get_value",
                     Items = new List<RequestItem>(),
-
                 };
                 request.Items.Add(new RequestItem { Path = $"/MACHINE/CONTROLLER/VARIABLE@AXIS_{axis.GetEnumNumber()}", Index = new[] { AxisDataIndices.ActualFeed } });
 
-
-
-                //获取当前运行的程序
-                //request.Items.Add(new RequestItem { Path = $"/MACHINE/CONTROLLER/PROGRAM" });
-
-
-                var result = await ApiClient.GetAsync<BaseResponse<int[][]>>($"/v1/{CurrentSNCode}/data", request);
-                BaseResponse.Code = result.Code;
-                BaseResponse.Status = result.Status;
-
+                var result = await _apiClient.SendAsync<BaseResponse<int[][]>>(HttpMethod.Get, $"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                baseResp.Code = result?.Code ?? -1;
+                baseResp.Status = result?.Status ?? "无响应";
 
                 if (result?.Code == 0 && result.Value != null)
                 {
-                    // 解析映射
                     var axisData = UniversalValueConversion.ParseAxisData(axis, request, result.Value);
-                    BaseResponse.Value = axisData;
-
+                    baseResp.Value = axisData;
                 }
-                return BaseResponse;
-
-
-
+                return baseResp;
             }
             catch (HttpRequestException ex)
             {
-                // 网络错误处理
                 return new BaseResponse<AxisData>
                 {
                     Status = $"网络错误: {ex.Message}",
                 };
-
             }
-
         }
+
         /// <summary>
         /// 单个获取轴剩余进给数据
         /// </summary>
-        /// <param name="axis">要获取的轴</param>
-        public static async Task<BaseResponse<AxisData>> GetRemainingFeedAsync(AxisEnum axis)
+        public async Task<BaseResponse<AxisData>> GetRemainingFeedAsync(AxisEnum axis)
         {
             try
             {
-                var BaseResponse = new BaseResponse<AxisData>();
-                var shuz = axis.ToString().ToUpper();
+                var baseResp = new BaseResponse<AxisData>();
                 var request = new BaseRequest
                 {
                     Operation = "get_value",
                     Items = new List<RequestItem>(),
-
                 };
                 request.Items.Add(new RequestItem { Path = $"/MACHINE/CONTROLLER/VARIABLE@AXIS_{axis.GetEnumNumber()}", Index = new[] { AxisDataIndices.RemainingFeed } });
 
-
-
-                //获取当前运行的程序
-                //request.Items.Add(new RequestItem { Path = $"/MACHINE/CONTROLLER/PROGRAM" });
-
-
-                var result = await ApiClient.GetAsync<BaseResponse<int[][]>>($"/v1/{CurrentSNCode}/data", request);
-                BaseResponse.Code = result.Code;
-                BaseResponse.Status = result.Status;
-
+                var result = await _apiClient.SendAsync<BaseResponse<int[][]>>(HttpMethod.Get, $"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                baseResp.Code = result?.Code ?? -1;
+                baseResp.Status = result?.Status ?? "无响应";
 
                 if (result?.Code == 0 && result.Value != null)
                 {
-                    // 解析映射
                     var axisData = UniversalValueConversion.ParseAxisData(axis, request, result.Value);
-                    BaseResponse.Value = axisData;
-
+                    baseResp.Value = axisData;
                 }
-                return BaseResponse;
-
-
-
+                return baseResp;
             }
             catch (HttpRequestException ex)
             {
-                // 网络错误处理
                 return new BaseResponse<AxisData>
                 {
                     Status = $"网络错误: {ex.Message}",
                 };
-
             }
-
         }
 
         /// <summary>
         /// 单个获取轴实际进给和剩余进给数据
         /// </summary>
-        /// <param name="axis">要获取的轴</param>
-        public static async Task<BaseResponse<AxisData>> GetActualAndRemainingFeedAsync(AxisEnum axis)
+        public async Task<BaseResponse<AxisData>> GetActualAndRemainingFeedAsync(AxisEnum axis)
         {
             try
             {
-                var BaseResponse = new BaseResponse<AxisData>();
-                var shuz = axis.ToString().ToUpper();
+                var baseResp = new BaseResponse<AxisData>();
                 var request = new BaseRequest
                 {
                     Operation = "get_value",
                     Items = new List<RequestItem>(),
-
                 };
                 request.Items.Add(new RequestItem { Path = $"/MACHINE/CONTROLLER/VARIABLE@AXIS_{axis.GetEnumNumber()}", Index = new[] { AxisDataIndices.RemainingFeed, AxisDataIndices.ActualFeed } });
 
-
-
-                //获取当前运行的程序
-                //request.Items.Add(new RequestItem { Path = $"/MACHINE/CONTROLLER/PROGRAM" });
-
-
-                var result = await ApiClient.GetAsync<BaseResponse<int[][]>>($"/v1/{CurrentSNCode}/data", request);
-                BaseResponse.Code = result.Code;
-                BaseResponse.Status = result.Status;
-
+                var result = await _apiClient.SendAsync<BaseResponse<int[][]>>(HttpMethod.Get, $"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                baseResp.Code = result?.Code ?? -1;
+                baseResp.Status = result?.Status ?? "无响应";
 
                 if (result?.Code == 0 && result.Value != null)
                 {
-                    // 解析映射
                     var axisData = UniversalValueConversion.ParseAxisData(axis, request, result.Value);
-                    BaseResponse.Value = axisData;
-
+                    baseResp.Value = axisData;
                 }
-                return BaseResponse;
-
-
-
+                return baseResp;
             }
             catch (HttpRequestException ex)
             {
-                // 网络错误处理
                 return new BaseResponse<AxisData>
                 {
                     Status = $"网络错误: {ex.Message}",
                 };
-
             }
-
         }
 
         /// <summary>
         /// 批量获取轴实际进给和剩余进给数据
         /// </summary>
-        /// <param name="axisList">要获取的轴</param>
-        public static async Task<BaseResponse<List<AxisData>>> BatchGetActualAndRemainingFeedAsync(List<AxisEnum> axisList)
+        public async Task<BaseResponse<List<AxisData>>> BatchGetActualAndRemainingFeedAsync(List<AxisEnum> axisList)
         {
             try
             {
-                var BaseResponse = new BaseResponse<List<AxisData>>();
-                //var shuz = axis.ToString().ToUpper();
+                var baseResp = new BaseResponse<List<AxisData>>();
                 var request = new BaseRequest
                 {
                     Operation = "get_value",
                     Items = new List<RequestItem>(),
-
                 };
                 foreach (var axis in axisList)
                 {
                     request.Items.Add(new RequestItem { Path = $"/MACHINE/CONTROLLER/VARIABLE@AXIS_{axis.GetEnumNumber()}", Index = new[] { AxisDataIndices.RemainingFeed, AxisDataIndices.ActualFeed } });
                 }
 
-
-
-                //获取当前运行的程序
-                //request.Items.Add(new RequestItem { Path = $"/MACHINE/CONTROLLER/PROGRAM" });
-
-
-                var result = await ApiClient.GetAsync<BaseResponse<int[][]>>($"/v1/{CurrentSNCode}/data", request);
-                BaseResponse.Code = result.Code;
-                BaseResponse.Status = result.Status;
-
+                var result = await _apiClient.SendAsync<BaseResponse<int[][]>>(HttpMethod.Get, $"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                baseResp.Code = result?.Code ?? -1;
+                baseResp.Status = result?.Status ?? "无响应";
 
                 if (result?.Code == 0 && result.Value != null)
                 {
-                    // 解析映射
                     var axisData = UniversalValueConversion.ParseAxisData(axisList, request, result.Value);
-                    BaseResponse.Value = axisData;
-
+                    baseResp.Value = axisData;
                 }
-                return BaseResponse;
-
-
-
+                return baseResp;
             }
             catch (HttpRequestException ex)
             {
-                // 网络错误处理
                 return new BaseResponse<List<AxisData>>
                 {
                     Status = $"网络错误: {ex.Message}",
                 };
-
             }
-
         }
-
 
         /// <summary>
         /// 批量获取全部轴实际进给和剩余进给数据 --默认全部
         /// </summary>
-        /// <param name="axisList">要获取的轴</param>
-        public static async Task<BaseResponse<List<AxisData>>> BatchGetAllActualAndRemainingFeedAsync()
+        public async Task<BaseResponse<List<AxisData>>> BatchGetAllActualAndRemainingFeedAsync()
         {
             try
             {
-                var BaseResponse = new BaseResponse<List<AxisData>>();
-                //var shuz = axis.ToString().ToUpper();
+                var baseResp = new BaseResponse<List<AxisData>>();
                 var request = new BaseRequest
                 {
                     Operation = "get_value",
                     Items = new List<RequestItem>(),
-
                 };
-                // 获取所有枚举值
                 var axisList = Enum.GetValues(typeof(AxisEnum)).Cast<AxisEnum>().ToList();
                 foreach (var axis in axisList)
                 {
                     request.Items.Add(new RequestItem { Path = $"/MACHINE/CONTROLLER/VARIABLE@AXIS_{axis.GetEnumNumber()}", Index = new[] { AxisDataIndices.RemainingFeed, AxisDataIndices.ActualFeed } });
                 }
 
-
-
-                //获取当前运行的程序
-                //request.Items.Add(new RequestItem { Path = $"/MACHINE/CONTROLLER/PROGRAM" });
-
-
-                var result = await ApiClient.GetAsync<BaseResponse<int[][]>>($"/v1/{CurrentSNCode}/data", request);
-                BaseResponse.Code = result.Code;
-                BaseResponse.Status = result.Status;
-
+                var result = await _apiClient.SendAsync<BaseResponse<int[][]>>(HttpMethod.Get, $"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                baseResp.Code = result?.Code ?? -1;
+                baseResp.Status = result?.Status ?? "无响应";
 
                 if (result?.Code == 0 && result.Value != null)
                 {
-                    // 解析映射
                     var axisData = UniversalValueConversion.ParseAxisData(axisList, request, result.Value);
-                    BaseResponse.Value = axisData;
-
+                    baseResp.Value = axisData;
                 }
-                return BaseResponse;
-
-
-
+                return baseResp;
             }
             catch (HttpRequestException ex)
             {
-                // 网络错误处理
                 return new BaseResponse<List<AxisData>>
                 {
                     Status = $"错误: {ex.Message}",
                 };
-
             }
-
         }
 
         /// <summary>
         /// 获取启动和暂停状态
         /// </summary>
-        /// <returns></returns>
-        public static async Task<BaseResponse<StartStopState>> GetStartPauseStateAsync()
+        public async Task<BaseResponse<StartStopState>> GetStartPauseStateAsync()
         {
             try
             {
-                var BaseResponse = new BaseResponse<StartStopState>();
+                var baseResp = new BaseResponse<StartStopState>();
                 var request = new BaseRequest
                 {
                     Operation = "get_value",
                     Items = new List<RequestItem>(),
-
                 };
-                // request.Items.Add(new RequestItem { Path = "/MACHINE/CONTROLLER/VARIABLE@CHAN_0", Index = new[] { ChannelDataIndices.CycleStart, ChannelDataIndices.FeedHold } });
                 request.Items.Add(new RequestItem { Path = "/MACHINE/CONTROLLER/VARIABLE@CHAN_0", Index = new[] { ChannelDataIndices.FeedHold, ChannelDataIndices.CycleStart } });
 
-                var result = await ApiClient.GetAsync<BaseResponse<int[][]>>($"/v1/{CurrentSNCode}/data", request);
-                BaseResponse.Code = result.Code;
-                BaseResponse.Status = result.Status;
+                var result = await _apiClient.SendAsync<BaseResponse<int[][]>>(HttpMethod.Get, $"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                baseResp.Code = result?.Code ?? -1;
+                baseResp.Status = result?.Status ?? "无响应";
 
                 if (result?.Code == 0 && result.Value != null)
                 {
-                    BaseResponse.Value = ApiDataParser.ParseFromRequest<StartStopState>(request, result.Value);
+                    baseResp.Value = ApiDataParser.ParseFromRequest<StartStopState>(request, result.Value);
                 }
-
-                return BaseResponse;
-
+                return baseResp;
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
-                // 网络错误处理
                 return new BaseResponse<StartStopState>
                 {
-                    Status = $"错误: {ex.Message}",
+                    Status = $"网络错误: {ex.Message}",
                 };
             }
-
         }
-        /// <summary>
-        /// 设置进给保持和循环启动
-        /// </summary>
-        /// <param name="startStopState">操作那个按钮操作的值</param>
-        /// <returns></returns>
 
-        public static async Task<BaseResponse<bool>> SetStartPauseStateAsync(StartStopStateDto startStopState)
+        /// <summary>
+        /// 设置启动/暂停信号（实例方法，保留并优化原逻辑）
+        /// </summary>
+        public async Task<BaseResponse<bool>> SetStartPauseStateAsync(StartStopStateDto startStopState)
         {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<bool> { Status = "未设置设备 SNCode" };
+            }
+
             try
             {
                 var request = new BaseRequest
                 {
                     Operation = "set_value",
                     Items = new List<RequestItem>(),
-
                 };
+
                 // 确定寄存器偏移量
                 int offset = startStopState.SetStatus switch
                 {
@@ -438,6 +299,7 @@ namespace HZtest.Services
                     StartStopStatusEnum.Stop => RegisterOffsetConstants.FeedHold,
                     _ => throw new ArgumentException($"不支持的 SetStatus: {startStopState.SetStatus}")
                 };
+
                 request.Items.Add(new RequestItem
                 {
                     Path = "/MACHINE/CONTROLLER/VARIABLE@REG_G",
@@ -446,8 +308,7 @@ namespace HZtest.Services
                     Value = Convert.ToInt32(startStopState.State)
                 });
 
-                var result = await ApiClient.PostAsync<BaseResponse<bool[]>>($"/v1/{CurrentSNCode}/data", request);
-                // 安全提取第一个 bool 值
+                var result = await _apiClient.PostAsync<BaseResponse<bool[]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
                 bool? firstValue = result?.Value?.FirstOrDefault();
 
                 return new BaseResponse<bool>
@@ -455,13 +316,10 @@ namespace HZtest.Services
                     Code = result?.Code ?? -1,
                     Status = result?.Status ?? "未知错误",
                     Value = firstValue ?? default(bool),
-                    // 可选：如果 API 成功但无数据，是否算失败？按需处理
                 };
-
             }
             catch (Exception ex)
             {
-                // 网络错误处理
                 return new BaseResponse<bool>
                 {
                     Status = $"错误: {ex.Message}",
@@ -470,12 +328,14 @@ namespace HZtest.Services
         }
 
         /// <summary>
-        /// 获取主轴实际转速
+        /// 获取主轴实际转速（实例方法）
         /// </summary>
-        /// <param name="startStopState"></param>
-        /// <returns></returns>
-        public static async Task<BaseResponse<int>> GetActualSpindleSpeedAsync()
+        public async Task<BaseResponse<int>> GetActualSpindleSpeedAsync()
         {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<int> { Status = "未设置设备 SNCode" };
+            }
 
             try
             {
@@ -483,7 +343,6 @@ namespace HZtest.Services
                 {
                     Operation = "get_value",
                     Items = new List<RequestItem>(),
-
                 };
 
                 request.Items.Add(new RequestItem
@@ -492,44 +351,50 @@ namespace HZtest.Services
                     Index = ChannelDataIndices.ActualSpindleSpeed,
                 });
 
-                //var jason = await ApiClient.GetAsync($"/v1/{CurrentSNCode}/data", true, request);
-                var result = await ApiClient.PostAsync<BaseResponse<int[][]>>($"/v1/{CurrentSNCode}/data", request);
+                var result = await _apiClient.PostAsync<BaseResponse<int[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
 
+                if (result?.Code == 0 && result.Value != null)
+                {
+                    var parsed = ApiDataParser.ParseFromRequest<ActualSpindleSpeed>(request, result.Value);
+                    return new BaseResponse<int>
+                    {
+                        Code = result.Code,
+                        Status = result.Status,
+                        Value = parsed.Speed
+                    };
+                }
 
                 return new BaseResponse<int>
                 {
                     Code = result?.Code ?? -1,
                     Status = result?.Status ?? "未知错误",
-                    //Value = result.Speed,
-                    // 可选：如果 API 成功但无数据，是否算失败？按需处理
                 };
-
             }
             catch (Exception ex)
             {
-                // 网络错误处理
                 return new BaseResponse<int>
                 {
                     Status = $"错误: {ex.Message}",
                 };
-
             }
-
         }
 
         /// <summary>
-        /// 获取运行模式
+        /// 获取运行模式（实例方法）
         /// </summary>
-        /// <returns></returns>
-        public static async Task<BaseResponse<string>> GetOperationModeAsync()
+        public async Task<BaseResponse<string>> GetOperationModeAsync()
         {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<string> { Status = "未设置设备 SNCode" };
+            }
+
             try
             {
                 var request = new BaseRequest
                 {
                     Operation = "get_value",
                     Items = new List<RequestItem>(),
-
                 };
 
                 request.Items.Add(new RequestItem
@@ -538,25 +403,23 @@ namespace HZtest.Services
                     Index = ChannelDataIndices.Mode,
                 });
 
-                var result = await ApiClient.PostAsync<BaseResponse<int[][]>>($"/v1/{CurrentSNCode}/data", request);
+                var result = await _apiClient.PostAsync<BaseResponse<int[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
 
                 var operationMode = new OperationMode();
                 if (result?.Code == 0 && result.Value != null)
                 {
                     operationMode = ApiDataParser.ParseFromRequest<OperationMode>(request, result.Value);
-
                 }
+
                 return new BaseResponse<string>
                 {
                     Code = result?.Code ?? -1,
                     Status = result?.Status ?? "未知错误",
                     Value = UniversalValueConversion.GetDescriptionFromInt<DevOperationModeEnum>(operationMode.CurrentMode),
-                    // 可选：如果 API 成功但无数据，是否算失败？按需处理
                 };
             }
             catch (Exception ex)
             {
-                // 网络错误处理
                 return new BaseResponse<string>
                 {
                     Status = $"错误: {ex.Message}",
@@ -565,18 +428,21 @@ namespace HZtest.Services
         }
 
         /// <summary>
-        /// 设置运行模式 - 慎用该功能
+        /// 设置运行模式 - 实例方法，保留并优化原逻辑
         /// </summary>
-        /// <returns></returns>
-        public static async Task<BaseResponse<bool>> SetOperationModeAsync(DevOperationModeEnum mode)
+        public async Task<BaseResponse<bool>> SetOperationModeAsync(DevOperationModeEnum mode)
         {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<bool> { Status = "未设置设备 SNCode" };
+            }
+
             try
             {
                 var request = new BaseRequest
                 {
                     Operation = "set_value",
                     Items = new List<RequestItem>(),
-
                 };
                 request.Items.Add(new RequestItem
                 {
@@ -584,7 +450,6 @@ namespace HZtest.Services
                     Index = RegisterConstants.RuOrStartPause,
                     Offset = 0,
                     Value = 0
-
                 });
                 request.Items.Add(new RequestItem
                 {
@@ -592,20 +457,17 @@ namespace HZtest.Services
                     Index = RegisterConstants.RuOrStartPause,
                     Offset = 1,
                     Value = 0
-
                 });
 
                 //目前只支持Auto和Jog模式切换
                 if (mode == DevOperationModeEnum.Auto)
                 {
-
                     request.Items.Add(new RequestItem
                     {
                         Path = "/MACHINE/CONTROLLER/VARIABLE@REG_G",
                         Index = RegisterConstants.RuOrStartPause,
                         Offset = 0,
                         Value = 1
-
                     });
                 }
 
@@ -617,15 +479,23 @@ namespace HZtest.Services
                         Index = RegisterConstants.RuOrStartPause,
                         Offset = 1,
                         Value = 1
-
                     });
                 }
 
-                var result = await ApiClient.PostAsync<BaseResponse<bool[]>>($"/v1/{CurrentSNCode}/data", request);
-                // 安全提取第一个 bool 值
+                var result = await _apiClient.PostAsync<BaseResponse<bool[]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+
+                if (result?.Value == null)
+                {
+                    return new BaseResponse<bool>
+                    {
+                        Code = result?.Code ?? -1,
+                        Status = result?.Status ?? "未知错误",
+                        Value = false
+                    };
+                }
+
                 if (result.Value.Any(x => x == false))
                 {
-
                     return new BaseResponse<bool>
                     {
                         Code = -1,
@@ -633,31 +503,21 @@ namespace HZtest.Services
                         Value = false,
                     };
                 }
+
                 return new BaseResponse<bool>
                 {
                     Code = result?.Code ?? -1,
                     Status = result?.Status ?? "未知错误",
                     Value = true,
-                    // 可选：如果 API 成功但无数据，是否算失败？按需处理
                 };
             }
             catch (Exception ex)
             {
-                // 网络错误处理
                 return new BaseResponse<bool>
                 {
                     Status = $"错误: {ex.Message}",
                 };
             }
         }
-
-
-
-
-
-
-
     }
-
-
 }

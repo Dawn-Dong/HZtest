@@ -2,11 +2,13 @@
 using HZtest.Services;
 using HZtest.View;
 using HZtest.ViewModels;
+using HZtest.Universal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Windows;
 using System.Windows.Controls;
-
 
 namespace HZtest
 {
@@ -47,12 +49,21 @@ namespace HZtest
             mainWindow.Show();
             base.OnStartup(e);
         }
-
+        /// <summary>
+        /// 注册服务 - 请在此处注册你的服务 
+        /// </summary>
+        /// <param name="services"></param>
         private void ConfigureServices(IServiceCollection services)
         {
             // 注册配置  单例模式 注入    
-            // 构造函数注入，自动获得那个唯一的 Configuration 实例
             services.AddSingleton(Configuration);
+
+            // 日志
+            services.AddLogging(builder =>
+            {
+                builder.AddDebug();
+                builder.SetMinimumLevel(LogLevel.Information);
+            });
 
             // 注册服务（根据你的实际代码调整）
             services.AddSingleton<IMessageService, MessageService>();
@@ -60,10 +71,7 @@ namespace HZtest
             // DialogService 延迟初始化（不在这里传RootGrid）
             services.AddSingleton<IDialogService, DialogService>();
 
-
-
             // ViewModels - 不传递SN码参数，通过属性设置  
-            //每次请求 Services.GetRequiredService<HomePageViewModel>(); 都创建一个全新的实例。
             services.AddTransient<HomePageViewModel>();
 
             // Views
@@ -71,6 +79,20 @@ namespace HZtest
             services.AddTransient<DevConnection>();
             services.AddTransient<HomePage>();
             services.AddTransient<FileOperationsPage>();
+
+            // ApiClient: 使用 Typed Client，通过配置设置 BaseAddress；SetHandlerLifetime 控制 handler 重用周期
+            var apiSettings = Configuration.GetSection("ApiSettings").Get<AppSettings>() ?? new AppSettings();
+            services.AddHttpClient<ApiClient>(client =>
+            {
+                if (!string.IsNullOrEmpty(apiSettings.BaseUrl))
+                {
+                    client.BaseAddress = new Uri(apiSettings.BaseUrl);
+                }
+                client.Timeout = TimeSpan.FromSeconds(30);
+            }).SetHandlerLifetime(TimeSpan.FromMinutes(5));
+
+            // DeviceService：保持单例以保存 SN 状态（可根据需要改为 transient）
+            services.AddSingleton<DeviceService>();
         }
 
         /// <summary>

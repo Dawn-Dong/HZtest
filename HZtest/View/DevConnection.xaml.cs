@@ -3,30 +3,26 @@ using HZtest.View;
 using HZtest.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace HZtest
 {
     /// <summary>
     /// DevConnection.xaml 的交互逻辑
+    /// 现在通过构造器注入 DeviceService（由 DI 提供）
     /// </summary>
     public partial class DevConnection : Page
     {
-        public DevConnection()
+        private readonly DeviceService _deviceService;
+
+        public DevConnection(DeviceService deviceService)
         {
+            _deviceService = deviceService ?? throw new ArgumentNullException(nameof(deviceService));
             InitializeComponent();
         }
+
         /// <summary>
         /// 按钮点击事件处理程序
         /// </summary>
@@ -39,21 +35,22 @@ namespace HZtest
                 return;
             }
             TestConnectionButton.IsEnabled = false;
-            var result = await DeviceService.GetDeviceInfoAsync(snCode);
+            var result = await _deviceService.GetDeviceInfoAsync(snCode);
             TestConnectionButton.IsEnabled = true;
 
             if (result.Code == 0)
             {
-                DeviceService.CurrentSNCode = snCode;
+                _deviceService.SetCurrentSNCode(snCode);
 
-                // 从 DI 创建 HomePage 和 ViewModel，或者直接创建并初始化后传给 MainWindow（避免不同实例）
+                // 从 DI 创建 HomePage 实例
                 var homePage = App.Services.GetRequiredService<HomePage>();
-                var viewModel = App.Services.GetRequiredService<HomePageViewModel>();
 
-                // 绑定并初始化 ViewModel
-                homePage.DataContext = viewModel;
-                viewModel.SNCode = snCode;
-               // viewModel.Initialize(snCode);
+                // 如果 HomePage 的 DataContext 是 HomePageViewModel 类型，则进行 SN 码的设置与初始化
+                if (homePage.DataContext is HomePageViewModel viewModel)
+                {
+                    viewModel.SNCode = snCode;
+                    viewModel.Initialize();
+                }
 
                 // 使用 MainWindow 的重载方法直接传入 homePage 实例进行导航（保证显示的是已初始化的实例）
                 var mainWindow = Application.Current.MainWindow as MainWindow;

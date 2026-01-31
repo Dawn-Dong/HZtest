@@ -1,7 +1,8 @@
 ﻿using HZtest.View;
+using HZtest.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
-using System.Windows;
 using System.Text;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
@@ -28,16 +29,17 @@ namespace HZtest
         /// </summary>
         public void NavigateToHomePage(string SNCode)
         {
-            // 从全局 ServiceProvider 获取由容器创建的 HomePage 与 ViewModel
-            var viewModel = App.Services.GetRequiredService<ViewModels.HomePageViewModel>();
+            // 只从容器获取 Page 实例（Page 的构造函数由 DI 注入 ViewModel）
             var homePage = App.Services.GetRequiredService<HomePage>();
 
-            // 初始化 ViewModel（如果需要传 SN 并触发加载）
-            viewModel.SNCode = SNCode;
-            viewModel.Initialize(SNCode);
-
-            // 使用容器创建的页面实例进行导航
+            // 把 Page 显示出来
             MainFrame.Content = homePage;
+
+            // 获取该 Page 的 DataContext（由 HomePage 构造函数设置）
+            if (homePage.DataContext is ViewModels.HomePageViewModel viewModel)
+            {
+                viewModel.Initialize();
+            }
 
             if (StatusTextBlock != null)
             {
@@ -56,9 +58,7 @@ namespace HZtest
                 NavigateToHomePage(SNCode);
                 return;
             }
-
             MainFrame.Content = homePage;
-
             if (StatusTextBlock != null)
             {
                 StatusTextBlock.Text = $"当前操作设备SN码:{SNCode}";
@@ -79,9 +79,15 @@ namespace HZtest
         private void HomeButton_Click(object sender, RoutedEventArgs e)
         {
             // 如果你有 HomePage 的 DI 实例化逻辑，使用 NavigateToHomePage 或直接 new
-            var home = App.Services.GetService<HomePage>();
-            if (home != null)
-                MainFrame.Content = home;
+            var homePage = App.Services.GetService<HomePage>();
+            // 如果 HomePage 的 DataContext 是 HomePageViewModel 类型，则进行 SN 码的设置与初始化
+            if (homePage.DataContext is HomePageViewModel viewModel)
+            {
+                viewModel.Initialize();
+            }
+            MainFrame.Content = homePage;
+
+
         }
 
 

@@ -1,137 +1,93 @@
 ﻿// Services/ApiClient.cs
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace HZtest.Universal
 {
     /// <summary>
-    /// 通用HTTP客户端，负责序列化、发送请求、接收响应
+    /// 基于 IHttpClientFactory 的通用 HTTP 客户端（Typed client）。
+    /// 提供通用 SendAsync<T>，并在内部使用流式反序列化以减少内存占用。
     /// </summary>
-    public static class ApiClient
+    public class ApiClient
     {
-        private static readonly HttpClient _http = new HttpClient();
+        private readonly HttpClient _http;
+        private readonly ILogger<ApiClient> _logger;
         private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             WriteIndented = false
         };
 
-        static ApiClient()
+        public ApiClient(HttpClient httpClient, ILogger<ApiClient> logger)
         {
-            var settings = App.Configuration.GetSection("ApiSettings").Get<AppSettings>() ?? new AppSettings();
-            _http.BaseAddress = new Uri(settings.BaseUrl);
+            _http = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
-        /// 发送GET请求并返回反序列化结果
+        /// 通用发送并反序列化为 T（适用于 GET/POST/PUT 等）
         /// </summary>
-        public static async Task<TResponse> GetAsync<TResponse>(string path, object requestBody = null)
+        public async Task<T?> SendAsync<T>(HttpMethod method, string path, object? body = null, CancellationToken cancellationToken = default)
         {
-            return await SendRequestAsync<TResponse>(HttpMethod.Get, path, requestBody);
-        }
+            using var request = new HttpRequestMessage(method, path);
 
-        /// <summary>
-        /// 发送POST请求并返回反序列化结果
-        /// </summary>
-        public static async Task<TResponse> PostAsync<TResponse>(string path, object requestBody = null)
-        {
-            return await SendRequestAsync<TResponse>(HttpMethod.Post, path, requestBody);
-        }
+            if (body != null)
+            {
+                var json = JsonSerializer.Serialize(body, _jsonOptions);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            }
 
-        /// <summary>
-        /// 发送GET请求并返回反序列化结果
-        /// </summary>
-        public static async Task<string> GetAsync(string path, bool isSerialization, object requestBody = null)
-        {
-            return await SendRequestAsync(HttpMethod.Get, path, requestBody, isSerialization );
-        }
-
-        /// <summary>
-        /// 发送POST请求并返回反序列化结果
-        /// </summary>
-        public static async Task<string> PostAsync(string path, bool isSerialization , object requestBody = null )
-        {
-            return await SendRequestAsync(HttpMethod.Post, path, requestBody, isSerialization);
-        }
-
-        /// <summary>
-        /// 通用请求方法（私有）
-        /// </summary>
-        private static async Task<string> SendRequestAsync(
-            HttpMethod method,
-            string path,
-            object requestBody,
-            bool isSerialization)
-        {
             try
             {
-                // 构建请求
-                var request = new HttpRequestMessage(method, path);
+                // ResponseHeadersRead 可让我们先处理头，流式读取内容，降低大响应内存开销
+                var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
 
-                // 如果有请求体，序列化并添加
-                if (requestBody != null)
-                {
-                    string jsonContent = JsonSerializer.Serialize(requestBody, _jsonOptions);
-                    request.Content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-                }
-
-                // 发送请求
-                var response = await _http.SendAsync(request);
                 response.EnsureSuccessStatusCode();
 
-                // 反序列化响应
-                var json = await response.Content.ReadAsStringAsync();
-                return json;
+                await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+                var result = await JsonSerializer.DeserializeAsync<T>(stream, _jsonOptions, cancellationToken).ConfigureAwait(false);
+                return result;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogInformation("请求被取消: {Method} {Path}", method, path);
+                throw;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "HTTP 请求失败: {Method} {Path}", method, path);
+                throw;
             }
             catch (Exception ex)
             {
-                // 统一错误处理（可记录日志）
-                System.Diagnostics.Debug.WriteLine($"请求失败: {ex.Message}");
-                throw;     // 抛出异常，让调用方处理
+                _logger.LogError(ex, "反序列化或其他错误: {Method} {Path}", method, path);
+                throw;
             }
         }
 
         /// <summary>
-        /// 不jason序列化通用请求方法（私有）
+        /// 便捷方法：GET 返回字符串（非反序列化）
         /// </summary>
-        private static async Task<TResponse> SendRequestAsync<TResponse>(
-            HttpMethod method,
-            string path,
-            object requestBody
-            )
+        public async Task<string> GetStringAsync(string path, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                // 构建请求
-                var request = new HttpRequestMessage(method, path);
-
-                // 如果有请求体，序列化并添加
-                if (requestBody != null)
-                {
-                    string jsonContent = JsonSerializer.Serialize(requestBody, _jsonOptions);
-                    request.Content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-                }
-
-                // 发送请求
-                var response = await _http.SendAsync(request);
-                response.EnsureSuccessStatusCode();
-
-                // 反序列化响应
-                var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<TResponse>(json, _jsonOptions) ?? default;
-            }
-            catch (Exception ex)
-            {
-                // 统一错误处理（可记录日志）
-                System.Diagnostics.Debug.WriteLine($"请求失败: {ex.Message}");
-                throw;     // 抛出异常，让调用方处理
-            }
+            using var request = new HttpRequestMessage(HttpMethod.Get, path);
+            var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         }
 
-
-
+        /// <summary>
+        /// 便捷方法：POST 并反序列化为 T
+        /// </summary>
+        public Task<T?> PostAsync<T>(string path, object? body = null, CancellationToken cancellationToken = default)
+        {
+            return SendAsync<T>(HttpMethod.Post, path, body, cancellationToken);
+        }
     }
 }
