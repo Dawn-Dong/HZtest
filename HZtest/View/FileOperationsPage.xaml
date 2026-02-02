@@ -44,7 +44,7 @@
             Text="{Binding CurrentRunningFileDetails}"
             />-->
         <avalonedit:TextEditor 
-            Grid.Row="2" Grid.Column="0"
+            Grid.Row="2" Grid.Column="1"
            x:Name="GcodeEditor"
             IsReadOnly="True"
             Background="#FFCBD2CA"
@@ -54,8 +54,8 @@
             LineNumbersForeground="Gray" 
             WordWrap="False"
             />
-
-
-        <Button Grid.Row="1" Grid.Column="0" Content="读取运行文件详情" Width="120" Height="40" Margin="10" Command="{Binding FileDetailsCommand}"/>
+        <Button Grid.Row="1" Grid.Column="1" Content="读取运行文件详情" Width="120" Height="40" Margin="10" Command="{Binding FileDetailsCommand}"/>
+        
+        
     </Grid>
 </Page>
