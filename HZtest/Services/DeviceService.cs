@@ -619,6 +619,53 @@ namespace HZtest.Services
             }
         }
 
+
+        /// <summary>
+        /// 获取G代码目录下文件列表
+        /// </summary>
+        /// <param name="mode"></param>
+        /// <returns></returns>
+        public async Task<BaseResponse<FileOperationsModel>> GetDirectoryFileListAsync()
+        {
+
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<FileOperationsModel> { Status = "未设置设备 SNCode" };
+            }
+            try
+            {
+                var request = new BaseRequest
+                {
+                    Operation = "get_keys",
+                    Items = new List<RequestItem>(),
+                };
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/FILE",
+                });
+
+                var result = await _apiClient.PostAsync<BaseResponse<string[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                var fileOperationsModel = new FileOperationsModel();
+                fileOperationsModel.DirectoryFileList = result?.Value[0].ToList() ?? new List<string>();
+                return new BaseResponse<FileOperationsModel>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = fileOperationsModel,
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<FileOperationsModel>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
+
+
+
+
         #endregion
 
 

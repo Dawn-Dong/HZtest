@@ -5,9 +5,20 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:avalonedit="http://icsharpcode.net/sharpdevelop/avalonedit"
       xmlns:local="clr-namespace:HZtest.View"
+      xmlns:infra="clr-namespace:HZtest.Infrastructure_基础设施"
+      xmlns:vm="clr-namespace:HZtest.ViewModels"
+      xmlns:models="clr-namespace:HZtest.Models"
+      xmlns:converters ="clr-namespace:HZtest.Converters"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
       Title="FileOperationsPage">
+
+    <Page.Resources>
+        <!-- 图标转换器（简单版） -->
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+        <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility"/>
+        <converters:BoolToIconConverter x:Key="BoolToIcon"/>
+    </Page.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -19,9 +30,10 @@
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
+
         <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" >
-            <TextBlock Text="当前运行的文件：" FontSize="24" FontWeight="Bold" Margin="10,0"/>
-            <TextBlock Text="{Binding CurrentRunningFile}" FontSize="24" FontWeight="Bold" >
+            <TextBlock Text="当前运行的文件：" FontSize="24" FontWeight="Bold" Margin="10,0" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding CurrentRunningFile}" FontSize="24" FontWeight="Bold" VerticalAlignment="Center" >
                 <TextBlock.Foreground>
                     <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
                         <GradientStop Color="#FF0540D7"/>
@@ -29,33 +41,75 @@
                     </LinearGradientBrush>
                 </TextBlock.Foreground>
             </TextBlock>
+            <Button Content="切换运行文件" Width="120" Height="40" Margin="20,0,0,0" Command="{Binding SwitchRunningFileCommand}"/>
         </StackPanel>
-        <!-- 只读模式性能更好 -->
-        <!-- 虚拟化 -->
-        <!--<TextBox 
-            Grid.Row="2" Grid.Column="0" 
-                IsReadOnly="True"             
-                IsReadOnlyCaretVisible="False"
-                VirtualizingPanel.IsVirtualizing="True" Background="#FFCBD2CA" 
-            TextWrapping="NoWrap"
-            AcceptsReturn="True"
-            ScrollViewer.HorizontalScrollBarVisibility="Auto"
-            ScrollViewer.VerticalScrollBarVisibility="Auto" 
-            Text="{Binding CurrentRunningFileDetails}"
-            />-->
+
+        <!-- 右侧编辑器 -->
         <avalonedit:TextEditor 
             Grid.Row="2" Grid.Column="1"
-           x:Name="GcodeEditor"
+            x:Name="GcodeEditor"
             IsReadOnly="True"
             Background="#FFCBD2CA"
             FontFamily="Consolas"
             FontSize="12"
             ShowLineNumbers="True"    
             LineNumbersForeground="Gray" 
-            WordWrap="False"
-            />
+            WordWrap="False"/>
+
         <Button Grid.Row="1" Grid.Column="1" Content="读取运行文件详情" Width="120" Height="40" Margin="10" Command="{Binding FileDetailsCommand}"/>
-        
-        
+
+        <!-- 左侧树形结构 -->
+        <TreeView ItemsSource="{Binding TreeItems}" 
+                  Grid.Row="2" 
+                  Grid.Column="0"
+                  SelectedItemChanged="FileTree_SelectedItemChanged"
+                  VirtualizingPanel.IsVirtualizing="True"
+                  VirtualizingPanel.VirtualizationMode="Recycling">
+
+            <TreeView.Resources>
+                <!-- 注意：如果 FileNode 在 ViewModel 命名空间，改为 vm:FileNode -->
+                <HierarchicalDataTemplate DataType="{x:Type models:FileNode}" 
+                                          ItemsSource="{Binding Children}">
+                    <StackPanel Orientation="Horizontal" Margin="2">
+                        <!-- 图标 -->
+                        <TextBlock Text="{Binding IsDirectory, Converter={StaticResource BoolToIcon}}" 
+                                   Width="20" 
+                                   TextAlignment="Center"/>
+
+                        <!-- 文件名 -->
+                        <TextBlock Text="{Binding Name}" 
+                                   VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDirectory}" Value="True">
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                            <Setter Property="Foreground" Value="#FF0066CC"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!-- 完整路径（仅文件显示） -->
+                        <TextBlock Text="{Binding FullPath}" 
+                                   Margin="10,0,0,0" 
+                                   FontSize="10" 
+                                   Opacity="0.5"
+                                   Visibility="{Binding IsDirectory, Converter={StaticResource InverseBoolToVisibility}}"/>
+                    </StackPanel>
+                </HierarchicalDataTemplate>
+            </TreeView.Resources>
+
+            <TreeView.ItemContainerStyle>
+                <Style TargetType="TreeViewItem">
+                    <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                </Style>
+            </TreeView.ItemContainerStyle>
+
+
+
+        </TreeView>
+        <Button Grid.Row="1" Grid.Column="0" Content="刷新文件列表" Height="40" Margin="24,17,278,18" Command="{Binding DirectoryFileListCommand}"/>
     </Grid>
 </Page>
