@@ -1,4 +1,5 @@
-﻿using HZtest.View;
+﻿using HZtest.Interfaces_接口定义;
+using HZtest.View;
 using HZtest.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text;
@@ -22,6 +23,7 @@ namespace HZtest
         public MainWindow()
         {
             InitializeComponent();
+
         }
 
         /// <summary>

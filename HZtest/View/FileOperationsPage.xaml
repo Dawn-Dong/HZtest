@@ -16,8 +16,8 @@
     <Page.Resources>
         <!-- 图标转换器（简单版） -->
         <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
-        <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility"/>
-        <converters:BoolToIconConverter x:Key="BoolToIcon"/>
+        <converters:FileTypeToIconConverter  x:Key="TypeToIcon"/>
+        <converters:FileTypeToBoolConverter  x:Key="TypeToBool"/>
     </Page.Resources>
 
     <Grid>
@@ -58,58 +58,127 @@
 
         <Button Grid.Row="1" Grid.Column="1" Content="读取运行文件详情" Width="120" Height="40" Margin="10" Command="{Binding FileDetailsCommand}"/>
 
-        <!-- 左侧树形结构 -->
-        <TreeView ItemsSource="{Binding TreeItems}" 
-                  Grid.Row="2" 
-                  Grid.Column="0"
+        <Grid Grid.Row="2" Grid.Column="0" >
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+
+
+            <!-- 在 TreeView 上方加一个提示区域 -->
+            <StackPanel Grid.Row="0"  Orientation="Horizontal" Background="LightYellow">
+                <TextBlock Text="当前选中：" FontWeight="Bold" Margin="5"/>
+                <TextBlock Text="{Binding SelectedNode.Name}" Margin="5" Foreground="Blue"/>
+                <TextBlock Text="是否文件夹：" FontWeight="Bold" Margin="5"/>
+                <TextBlock Text="{Binding SelectedNode.IsDirectory}" Margin="5" Foreground="Red"/>
+            </StackPanel>
+
+            <!-- 左侧树形结构 -->
+            <!--
+            <TreeView ItemsSource="{Binding TreeItems}" 
+                  Grid.Row="1" 
                   SelectedItemChanged="FileTree_SelectedItemChanged"
                   VirtualizingPanel.IsVirtualizing="True"
                   VirtualizingPanel.VirtualizationMode="Recycling">
 
-            <TreeView.Resources>
-                <!-- 注意：如果 FileNode 在 ViewModel 命名空间，改为 vm:FileNode -->
-                <HierarchicalDataTemplate DataType="{x:Type models:FileNode}" 
+                <TreeView.Resources>
+                    -->
+            <!-- 注意：如果 FileNode 在 ViewModel 命名空间，改为 vm:FileNode -->
+            <!--
+                    <HierarchicalDataTemplate DataType="{x:Type models:FileNode}" 
                                           ItemsSource="{Binding Children}">
-                    <StackPanel Orientation="Horizontal" Margin="2">
-                        <!-- 图标 -->
-                        <TextBlock Text="{Binding IsDirectory, Converter={StaticResource BoolToIcon}}" 
+                        <StackPanel Orientation="Horizontal" Margin="2">
+                            -->
+            <!-- 图标 -->
+            <!--
+                            <TextBlock Text="{Binding IsDirectory, Converter={StaticResource BoolToIcon}}" 
                                    Width="20" 
                                    TextAlignment="Center"/>
 
-                        <!-- 文件名 -->
-                        <TextBlock Text="{Binding Name}" 
+                            -->
+            <!-- 文件名 -->
+            <!--
+                            <TextBlock Text="{Binding Name}" 
                                    VerticalAlignment="Center">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsDirectory}" Value="True">
-                                            <Setter Property="FontWeight" Value="Bold"/>
-                                            <Setter Property="Foreground" Value="#FF0066CC"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDirectory}" Value="True">
+                                                <Setter Property="FontWeight" Value="Bold"/>
+                                                <Setter Property="Foreground" Value="#FF0066CC"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
 
-                        <!-- 完整路径（仅文件显示） -->
-                        <TextBlock Text="{Binding FullPath}" 
+                            -->
+            <!-- 完整路径（仅文件显示） -->
+            <!--
+                            <TextBlock Text="{Binding FullPath}" 
                                    Margin="10,0,0,0" 
                                    FontSize="10" 
                                    Opacity="0.5"
                                    Visibility="{Binding IsDirectory, Converter={StaticResource InverseBoolToVisibility}}"/>
-                    </StackPanel>
-                </HierarchicalDataTemplate>
-            </TreeView.Resources>
+                        </StackPanel>
+                    </HierarchicalDataTemplate>
+                </TreeView.Resources>
 
-            <TreeView.ItemContainerStyle>
-                <Style TargetType="TreeViewItem">
-                    <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
-                </Style>
-            </TreeView.ItemContainerStyle>
+                <TreeView.ItemContainerStyle>
+                    <Style TargetType="TreeViewItem">
+                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                    </Style>
+                </TreeView.ItemContainerStyle>
 
 
 
-        </TreeView>
-        <Button Grid.Row="1" Grid.Column="0" Content="刷新文件列表" Height="40" Margin="24,17,278,18" Command="{Binding DirectoryFileListCommand}"/>
+            </TreeView>-->
+
+            <TreeView 
+                Grid.Row="1"
+                ItemsSource="{Binding TreeItems}"
+                SelectedItemChanged="FileTree_SelectedItemChanged"
+                VirtualizingPanel.VirtualizationMode="Recycling"
+                VirtualizingPanel.IsVirtualizing="True">  
+
+                <TreeView.Resources>
+                    <HierarchicalDataTemplate DataType="{x:Type models:FileNode}" 
+                                  ItemsSource="{Binding Children}">
+                        <StackPanel Orientation="Horizontal" Margin="2">
+                            <!-- 图标 -->
+                            <TextBlock Text="{Binding Type, Converter={StaticResource TypeToIcon}}" 
+                           Width="25" TextAlignment="Center"/>
+
+                            <!-- 文件名 -->
+                            <TextBlock Text="{Binding Name}" Width="150">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Type}" 
+                                             Value="{x:Static models:FileTypeEnum.Directory}">
+                                                <Setter Property="FontWeight" Value="Bold"/>
+                                                <Setter Property="Foreground" Value="#FF0066CC"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <!-- 大小 -->
+                            <TextBlock Text="{Binding DisplaySize}" 
+                           Width="80" Foreground="Gray" FontSize="11"/>
+
+                            <!-- 修改时间 -->
+                            <TextBlock Text="{Binding DisplayTime}" 
+                           Foreground="DarkGray" FontSize="11"/>
+                        </StackPanel>
+                    </HierarchicalDataTemplate>
+                </TreeView.Resources>
+            </TreeView>
+
+        </Grid>
+        <Button Grid.Row="1" Grid.Column="0" Content="刷新文件列表" Height="40" Margin="47,17,255,18" Command="{Binding DirectoryFileListCommand}"/>
+        <Button Grid.Row="1" Grid.Column="0" Content="上传文件" Height="40" Margin="271,17,31,18" Command="{Binding UploadFileCommand}"/>
     </Grid>
 </Page>

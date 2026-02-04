@@ -1,6 +1,7 @@
 ﻿using HZtest.Infrastructure_基础设施;
 using HZtest.Interfaces_接口定义;
 using HZtest.Models;
+using HZtest.Models.Request;
 using HZtest.Services;
 using System;
 using System.Collections.Generic;
@@ -19,6 +20,8 @@ namespace HZtest.ViewModels
         // 添加一个 Action 委托供 View 注册
         public Action<string> FileDetailsChanged { get; set; }
         // ===== 依赖服务（构造函数注入）=====
+        private readonly IDialogService _dialogService;
+        private readonly IMessageService _message_service;
         private readonly DeviceService _deviceService;
 
 
@@ -30,6 +33,8 @@ namespace HZtest.ViewModels
         public ICommand FileDetailsCommand { get; }
         public ICommand DirectoryFileListCommand { get; }
         public ICommand SwitchRunningFileCommand { get; }
+
+        public ICommand UploadFileCommand { get; }
         #region 树节点用
         public ObservableCollection<FileNode> TreeItems { get; } = new();
 
@@ -45,9 +50,11 @@ namespace HZtest.ViewModels
                 if (value != null)
                 {
                     // 在输出窗口查看（调试 -> 窗口 -> 输出）
-                    System.Diagnostics.Debug.WriteLine($"选中了：{value.Name}");
-                    System.Diagnostics.Debug.WriteLine($"是文件夹吗：{value.IsDirectory}");
-                    System.Diagnostics.Debug.WriteLine($"完整路径：{value.FullPath}");
+                    Debug.WriteLine($"选中了：{value.Name}");
+                    Debug.WriteLine($"是文件夹吗：{value.IsDirectory}");
+                    Debug.WriteLine($"完整路径：{value.FullPath}");
+                    Debug.WriteLine($"是否展开：{value.IsExpanded}");
+                    Debug.WriteLine($"是否选中：{value.IsSelected}");
                 }
             }
         }
@@ -84,10 +91,22 @@ namespace HZtest.ViewModels
             }
         }
 
+        private string _localFilePath = string.Empty;
 
-
-        public FileOperationsPageViewModel(DeviceService deviceService)
+        /// <summary>
+        /// 要上传的文件路径
+        /// </summary>
+        public string LocalFilePath
         {
+            get => _localFilePath;
+            set { _localFilePath = value; OnPropertyChanged(); }
+        }
+
+
+        public FileOperationsPageViewModel(IDialogService dialogService, IMessageService messageService, DeviceService deviceService)
+        {
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _message_service = messageService ?? throw new ArgumentNullException(nameof(messageService));
             _deviceService = deviceService ?? throw new ArgumentNullException(nameof(deviceService));
 
             // 绑定命令
@@ -95,6 +114,7 @@ namespace HZtest.ViewModels
             SwitchRunningFileCommand = new RelayCommand(async () => await ExecuteSwitchRunningFileAsync());
             DirectoryFileListCommand = new RelayCommand(GetDirectoryFileList);
 
+            UploadFileCommand = new AsyncRelayCommand(OpenUploadFileDialogs);
         }
 
         /// <summary>
@@ -115,7 +135,33 @@ namespace HZtest.ViewModels
         /// <returns></returns>
         private async Task ExecuteSwitchRunningFileAsync()
         {
-            var a = SelectedNode.FullPath;
+            if (SelectedNode == null)
+            {
+                _message_service.ShowError("请先选择一个文件。");
+                return;
+            }
+            if (SelectedNode.IsDirectory)
+            {
+                _message_service.ShowError("请选择一个文件，而不是文件夹。");
+                return;
+            }
+            if (string.IsNullOrEmpty(SelectedNode.FullPath))
+            {
+                _message_service.ShowError("选中的文件路径无效。");
+                return;
+            }
+            if (string.IsNullOrEmpty(SelectedNode.CompleteFullPath))
+            {
+                _message_service.ShowError("选中的文件完整路径无效。");
+                return;
+            }
+            var response = await _deviceService.SetSwitchRunningFileAsync(SelectedNode.CompleteFullPath);
+            if (response.Value)
+                _message_service.ShowMessage("切换成功！");
+            else
+                _message_service.ShowError("切换失败！");
+
+
         }
 
         /// <summary>
@@ -171,71 +217,190 @@ namespace HZtest.ViewModels
         /// 获取目录文件列表并构建树节点
         /// </summary>
         /// <returns></returns>
+        //public async void GetDirectoryFileList()
+        //{
+        //    var response = await _deviceService.GetDirectoryFileWithDetailsListAsync();
+        //    if (response?.Value?.FileDetailsList is not List<FileDetails> paths) return;
+
+        //    TreeItems.Clear();
+        //    var nodeCache = new Dictionary<string, FileNode>(StringComparer.OrdinalIgnoreCase);
+
+        //    // 排序确保先处理短的（父级）路径
+        //    foreach (var path in paths.OrderBy(p => p))
+        //    {
+        //        CreateNodeRecursively(path, nodeCache);
+        //    }
+        //}
+
+        //private FileNode CreateNodeRecursively(string path, Dictionary<string, FileNode> cache)
+        //{
+        //    // 已存在直接返回（防止重复创建）
+        //    if (cache.TryGetValue(path, out var existing)) return existing;
+
+        //    var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        //    var name = parts.Last();
+
+        //    // 确定父路径
+        //    string parentPath = null;
+        //    if (parts.Length > 1)
+        //    {
+        //        parentPath = string.Join("/", parts.Take(parts.Length - 1));
+        //    }
+
+        //    FileNode parent = null;
+        //    if (parentPath != null)
+        //    {
+        //        // 递归确保父节点存在（父节点肯定是文件夹）
+        //        parent = CreateNodeRecursively(parentPath, cache);
+        //        parent.IsDirectory = true;  // 有子项，强制标记为文件夹
+        //        parent.IsExpanded = true;   // 默认展开（可选）
+        //    }
+
+        //    var node = new FileNode
+        //    {
+        //        Name = name,
+        //        FullPath = path,
+        //        IsDirectory = false,  // 初始为文件，如果有子项会被改为 true
+        //        Parent = parent
+        //    };
+
+        //    cache[path] = node;
+
+        //    if (parent != null)
+        //    {
+        //        parent.Children.Add(node);
+        //    }
+        //    else
+        //    {
+        //        // 没有父路径，挂在根（这就是你说的"统一分组"）
+        //        TreeItems.Add(node);
+        //    }
+
+        //    return node;
+        //}
+
         public async void GetDirectoryFileList()
         {
-            var response = await  _deviceService.GetDirectoryFileListAsync();
-            if (response?.Value?.DirectoryFileList is not List<string> paths) return;
+            var response = await _deviceService.GetDirectoryFileWithDetailsListAsync();
+            if (response?.Value?.FileDetailsList is not List<FileDetails> fileList) return;
 
             TreeItems.Clear();
-            var nodeCache = new Dictionary<string, FileNode>(StringComparer.OrdinalIgnoreCase);
+            var cache = new Dictionary<string, FileNode>(StringComparer.OrdinalIgnoreCase);
 
-            // 排序确保先处理短的（父级）路径
-            foreach (var path in paths.OrderBy(p => p))
+            // 第一阶段：创建所有节点（按路径深度排序，确保父级在前）
+            foreach (var fileDetail in fileList.OrderBy(f => f.Name.Count(c => c == '/')))
             {
-                CreateNodeRecursively(path, nodeCache);
+                CreateNode(fileDetail, cache);
+            }
+
+            // 第二阶段：建立父子关系
+            foreach (var node in cache.Values)
+            {
+                var parentPath = GetParentPath(node.FullPath);
+
+                if (string.IsNullOrEmpty(parentPath))
+                {
+                    // 根级节点
+                    TreeItems.Add(node);
+                }
+                else if (cache.TryGetValue(parentPath, out var parent))
+                {
+                    // 挂到父节点下
+                    node.Parent = parent;
+                    parent.Children.Add(node);
+
+                    // 确保父节点是目录类型（有子项必定是目录）
+                    if (parent.Type != FileTypeEnum.Directory)
+                    {
+                        parent.Type = FileTypeEnum.Directory;
+                        OnPropertyChanged(nameof(parent.IsDirectory));
+                        OnPropertyChanged(nameof(parent.DisplaySize));
+                    }
+                }
             }
         }
 
-        private FileNode CreateNodeRecursively(string path, Dictionary<string, FileNode> cache)
+        // 创建单个节点
+        private FileNode CreateNode(FileDetails details, Dictionary<string, FileNode> cache)
         {
-            // 已存在直接返回（防止重复创建）
-            if (cache.TryGetValue(path, out var existing)) return existing;
-
-            var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            var name = parts.Last();
-
-            // 确定父路径
-            string parentPath = null;
-            if (parts.Length > 1)
-            {
-                parentPath = string.Join("/", parts.Take(parts.Length - 1));
-            }
-
-            FileNode parent = null;
-            if (parentPath != null)
-            {
-                // 递归确保父节点存在（父节点肯定是文件夹）
-                parent = CreateNodeRecursively(parentPath, cache);
-                parent.IsDirectory = true;  // 有子项，强制标记为文件夹
-                parent.IsExpanded = true;   // 默认展开（可选）
-            }
+            // 已存在则返回
+            if (cache.TryGetValue(details.Name, out var existing)) return existing;
 
             var node = new FileNode
             {
-                Name = name,
-                FullPath = path,
-                IsDirectory = false,  // 初始为文件，如果有子项会被改为 true
-                Parent = parent
+                Name = GetFileName(details.Name),
+                FullPath = details.Name,           // Name 字段实际存的是路径
+                Type = details.Type,
+                Size = details.Size,
+                ChangeTime = details.ChangeTime,
+                IsExpanded = details.Type == FileTypeEnum.Directory
             };
 
-            cache[path] = node;
-
-            if (parent != null)
-            {
-                parent.Children.Add(node);
-            }
-            else
-            {
-                // 没有父路径，挂在根（这就是你说的"统一分组"）
-                TreeItems.Add(node);
-            }
-
+            cache[details.Name] = node;
             return node;
         }
+
+        // 获取父路径
+        private static string GetParentPath(string path)
+        {
+            var lastSlash = path.LastIndexOf('/');
+            return lastSlash > 0 ? path.Substring(0, lastSlash) : null;
+        }
+
+        // 获取文件名（路径最后一部分）
+        private static string GetFileName(string path) =>
+            path.Split('/').Last();
+
 
         #endregion
 
 
+        private async Task OpenUploadFileDialogs()
+        {
+            try
+            {
+                //先确保选择了文件夹
+                if (SelectedNode == null)
+                {
+                    _message_service.ShowError("先选择一个要上传的文件夹");
+                    return;
+                }
+                if (!SelectedNode.IsDirectory)
+                {
+                    _message_service.ShowError("请选择一个文件夹，而不是文件");
+                    return;
+                }
+
+                //后弹出子对话框输入名称和选择本地文件
+                var FileUploadRequest = await _dialogService.ShowDialogAsync<FileUploadRequest?>("UploadFile");
+
+                if (FileUploadRequest == null)
+                {
+                    // 用户点击了取消
+                    _message_service.ShowMessage("操作已取消");
+                    return;
+                }
+                if (string.IsNullOrEmpty(FileUploadRequest.LocalFilePath))
+                {
+                    _message_service.ShowError("上传文件路径无效。");
+                    return;
+                }
+                if (string.IsNullOrEmpty(FileUploadRequest.FileName))
+                    _message_service.ShowError("文件名称不能命名为空");
+
+                FileUploadRequest.LocatedPath = SelectedNode.FullPath;
+                //请求接口实际执行上传到数控系统操作
+
+
+
+            }
+            catch (Exception ex)
+            {
+                _message_service.ShowError($"对话框异常: {ex.Message}");
+            }
+
+
+        }
 
 
 

@@ -30,6 +30,7 @@ namespace HZtest.Models
         /// </summary>
         public string Path { get; set; } = string.Empty;
 
+
         /// <summary>
         /// 访问位置
         /// </summary>
@@ -41,7 +42,12 @@ namespace HZtest.Models
         /// <summary>
         /// 一般为写入值
         /// </summary>
-        public int? Value { get; set; }
+        public object? Value { get; set; }
+
+        /// <summary>
+        /// key值
+        /// </summary>
+        public object? Key { get; set; }
 
     }
 

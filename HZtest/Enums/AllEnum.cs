@@ -118,5 +118,25 @@ namespace HZtest.Models
         [Description("手动数据输入")]
         MDI_SBL = 7,
     }
+    public enum FileTypeEnum
+    {
+        /// <summary>
+        /// 未知类型
+        /// </summary>
+        [Description("未知类型")]
+        Error = -1,
+
+        /// <summary>
+        /// 文件
+        /// </summary>
+        [Description("文件")]
+        File = 0,
+
+        /// <summary>
+        /// 目录
+        /// </summary>
+        [Description("目录")]
+        Directory = 1,
+    }
 
 }

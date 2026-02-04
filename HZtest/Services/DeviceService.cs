@@ -2,6 +2,8 @@
 using HZtest.Converters;
 using HZtest.DTO;
 using HZtest.Models;
+using HZtest.Models.Request;
+using HZtest.Models.Response;
 using HZtest.Universal;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -647,6 +649,8 @@ namespace HZtest.Services
                 var result = await _apiClient.PostAsync<BaseResponse<string[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
                 var fileOperationsModel = new FileOperationsModel();
                 fileOperationsModel.DirectoryFileList = result?.Value[0].ToList() ?? new List<string>();
+                var cs = await GetFilesDetailsAsync(fileOperationsModel.DirectoryFileList.ToArray());
+
                 return new BaseResponse<FileOperationsModel>
                 {
                     Code = result?.Code ?? -1,
@@ -662,8 +666,204 @@ namespace HZtest.Services
                 };
             }
         }
+        /// <summary>
+        /// 切换运行文件
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public async Task<BaseResponse<bool>> SetSwitchRunningFileAsync(string completeFullPath)
+        {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<bool> { Status = "未设置设备 SNCode" };
+            }
+            if (string.IsNullOrEmpty(completeFullPath))
+            {
+                return new BaseResponse<bool> { Status = "详细文件路径为空" };
+            }
+            try
+            {
+                var request = new BaseRequest
+                {
+                    Operation = "set_value",
+                    Items = new List<RequestItem>(),
+                };
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/CONSOLE",
+                    Value = $"prog 0 select {completeFullPath}"
+                });
+
+                var result = await _apiClient.PostAsync<BaseResponse<bool[]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                bool? firstValue = result?.Value?.FirstOrDefault();
+
+                return new BaseResponse<bool>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = firstValue ?? default(bool),
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<bool>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
+
+        /// <summary>
+        /// 获取文件数组中的文件是文件夹还是文件
+        /// </summary>
+        /// <param name="fullNameArray">文件名称数组</param>
+        /// <returns></returns>
+        public async Task<BaseResponse<List<FileDetails>>> GetFilesDetailsAsync(string[] fullNameArray)
+        {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<List<FileDetails>> { Status = "未设置设备 SNCode" };
+            }
+            if (fullNameArray.Length == 0)
+            {
+                return new BaseResponse<List<FileDetails>> { Status = "查询的文件数组为空" };
+            }
+            try
+            {
+                var request = new BaseRequest
+                {
+                    Operation = "get_attributes",
+                    Items = new List<RequestItem>(),
+                };
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/FILE",
+                    Key = fullNameArray
+                });
+
+                var result = await _apiClient.PostAsync<BaseResponse<FileOperationsResponse[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                var fileOperations = result?.Value[0];
+                var fileOperationsList = new List<FileDetails>();
+                for (int i = 0; i < fileOperations?.Count(); i++)
+                {
+                    fileOperationsList.Add(new FileDetails()
+                    {
+                        Name = fullNameArray[i],
+                        Type = fileOperations[i].Type == "directory" ? FileTypeEnum.Directory : FileTypeEnum.File,
+                        Size = fileOperations[i].Size,
+                        ChangeTime = fileOperations[i].ChangeTime,
+                    });
+
+                }
+
+                return new BaseResponse<List<FileDetails>>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = fileOperationsList
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<List<FileDetails>>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
 
 
+        /// <summary>
+        /// 获取G代码目录下文件列表(带文件详情的)
+        /// </summary>
+        /// <returns></returns>
+        public async Task<BaseResponse<FileOperationsModel>> GetDirectoryFileWithDetailsListAsync()
+        {
+
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<FileOperationsModel> { Status = "未设置设备 SNCode" };
+            }
+            try
+            {
+                var request = new BaseRequest
+                {
+                    Operation = "get_keys",
+                    Items = new List<RequestItem>(),
+                };
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/FILE",
+                });
+
+                var result = await _apiClient.PostAsync<BaseResponse<string[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                var fileOperationsModel = new FileOperationsModel();
+                fileOperationsModel.DirectoryFileList = result?.Value[0].ToList() ?? new List<string>();
+                var FilesDetails = await GetFilesDetailsAsync(fileOperationsModel.DirectoryFileList.ToArray());
+                fileOperationsModel.FileDetailsList = FilesDetails.Value ?? new List<FileDetails>();
+
+                return new BaseResponse<FileOperationsModel>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = fileOperationsModel,
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<FileOperationsModel>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
+        /// <summary>
+        /// 服务器上传文件到机床
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+
+        public async Task<BaseResponse<FileOperationsModel>> UploadFileAsync(FileUploadRequest fileUploadRequest)
+        {
+
+
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<FileOperationsModel> { Status = "未设置设备 SNCode" };
+            }
+            try
+            {
+                var request = new BaseRequest
+                {
+                    Operation = "get_keys",
+                    Items = new List<RequestItem>(),
+                };
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/FILE",
+                });
+
+                var result = await _apiClient.PostAsync<BaseResponse<string[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                var fileOperationsModel = new FileOperationsModel();
+                fileOperationsModel.DirectoryFileList = result?.Value[0].ToList() ?? new List<string>();
+                var FilesDetails = await GetFilesDetailsAsync(fileOperationsModel.DirectoryFileList.ToArray());
+                fileOperationsModel.FileDetailsList = FilesDetails.Value ?? new List<FileDetails>();
+
+                return new BaseResponse<FileOperationsModel>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = fileOperationsModel,
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<FileOperationsModel>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
 
 
         #endregion

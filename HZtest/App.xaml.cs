@@ -1,16 +1,19 @@
 ﻿using HZtest.Interfaces_接口定义;
 using HZtest.Services;
-using HZtest.View;
-using HZtest.ViewModels;
 using HZtest.Universal;
+using HZtest.View;
+using HZtest.View.Dialogs;
+using HZtest.ViewModels;
+using HZtest.ViewModels.Dialogs;
+using HZtest.Views.Dialogs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Net;
+using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
-using System.Net.Http;
-using System.Net;
 
 namespace HZtest
 {
@@ -59,7 +62,7 @@ namespace HZtest
         {
             // 注册配置  单例模式 注入    
             services.AddSingleton(Configuration);
-
+            
             // 日志
             services.AddLogging(builder =>
             {
@@ -76,11 +79,19 @@ namespace HZtest
             // ViewModels - 不传递SN码参数，通过属性设置  
             services.AddTransient<HomePageViewModel>();
             services.AddTransient<FileOperationsPageViewModel>();
+            // ViewModels Dialogs的 
+            services.AddTransient<UploadFileViewModel>();
+            services.AddTransient<ModeSelectionViewModel>();
+
             // Views
             services.AddTransient<MainWindow>();
             services.AddTransient<DevConnection>();
             services.AddTransient<HomePage>();
             services.AddTransient<FileOperationsPage>();
+
+            // VIews Dialogs的
+            services.AddTransient<ModeSelectionDialog>();
+            services.AddTransient<UploadFileDialogs>();
 
 
             // ApiClient: 使用 Typed Client，通过配置设置 BaseAddress；SetHandlerLifetime 控制 handler 重用周期

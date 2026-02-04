@@ -55,20 +55,6 @@ namespace HZtest.View
                 if (DataContext is FileOperationsPageViewModel vm)
                 {
                     vm.SelectedNode = node;  // 这样 ViewModel 也能收到
-
-                    // 如果是文件，直接读取显示
-                    if (!node.IsDirectory)
-                    {
-                        try
-                        {
-                            string content = System.IO.File.ReadAllText(node.FullPath);
-                            GcodeEditor.Text = content;
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show($"读取失败：{ex.Message}");
-                        }
-                    }
                 }
             }
         }

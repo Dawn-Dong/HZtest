@@ -1,18 +1,20 @@
 ﻿using HZtest.Interfaces_接口定义;
 using HZtest.Services;
+using HZtest.View.Dialogs;
 using HZtest.Views.Dialogs;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Threading;
 using System.Windows.Controls.Primitives;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using System.Windows.Threading;
 namespace HZtest.Services
 {
     public class DialogService : IDialogService
@@ -20,10 +22,10 @@ namespace HZtest.Services
         private Grid _rootGrid;
         private Grid _overlay;
         private ContentControl _container;
-
-        public DialogService()
+        private readonly IServiceProvider _serviceProvider;
+        public DialogService(IServiceProvider serviceProvider)
         {
-
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         }
 
         public void Initialize(Grid rootGrid)
@@ -114,7 +116,8 @@ namespace HZtest.Services
         {
             return name switch
             {
-                "ModeSelection" => new ModeSelectionDialog(),
+                "ModeSelection" => _serviceProvider.GetRequiredService<ModeSelectionDialog>(),
+                "UploadFile" => _serviceProvider.GetRequiredService<UploadFileDialogs>(),
                 _ => throw new ArgumentException($"未知对话框: {name}")
             };
         }

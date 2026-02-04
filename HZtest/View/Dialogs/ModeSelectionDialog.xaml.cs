@@ -11,12 +11,10 @@ namespace HZtest.Views.Dialogs
         /// 关闭请求事件（传递给 Service）
         /// </summary>
         public event EventHandler<object> RequestClose;
-        public ModeSelectionDialog()
+        public ModeSelectionDialog(ModeSelectionViewModel viewModel)
         {
             InitializeComponent();
-            // ✅ 关键：手动创建 ViewModel 并设置为 DataContext
-            // 因为我们是轻量级方案，不使用依赖注入容器
-            var viewModel = new ModeSelectionViewModel();
+
             DataContext = viewModel;
 
             // 监听 ViewModel 的关闭事件
