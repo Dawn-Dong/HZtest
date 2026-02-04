@@ -359,16 +359,40 @@ namespace HZtest.ViewModels
         {
             try
             {
-                //先确保选择了文件夹
-                if (SelectedNode == null)
+                var path = string.Empty;
+                //做简便操作处理
+
+                // 获取上传路径
+                var targetPath = await GetUploadPathAsync();
+                if (targetPath == null) return;
+                path = targetPath;
+                //局部方法 用来确定文件上传到哪里
+                async Task<string?> GetUploadPathAsync()
                 {
-                    _message_service.ShowError("先选择一个要上传的文件夹");
-                    return;
+                    // 情况1：什么都没选 → 根目录
+                    if (SelectedNode == null)
+                    {
+                        var ok = await _dialogService.ShowConfirmAsync("不选文件夹默认上传到根目录，是否继续？", "继续");
+                        return ok ? "" : null;
+                    }
+
+                    // 情况2：选中了文件 → 其父目录
+                    if (!SelectedNode.IsDirectory)
+                    {
+                        var ok = await _dialogService.ShowConfirmAsync("选择文件默认放到该文件父目录，是否继续？", "继续");
+                        return ok ? GetBeforeLast(SelectedNode.FullPath, '/') : null;
+                    }
+
+                    // 情况3：选中了文件夹 → 直接使用
+                    return SelectedNode.FullPath;
                 }
-                if (!SelectedNode.IsDirectory)
+
+                // 静态局部函数 辅助方法（直接写在这里或放到扩展类）
+                static string GetBeforeLast(string str, char separator)
                 {
-                    _message_service.ShowError("请选择一个文件夹，而不是文件");
-                    return;
+                    if (string.IsNullOrEmpty(str)) return str;
+                    int lastIndex = str.LastIndexOf(separator);
+                    return lastIndex >= 0 ? str.Substring(0, lastIndex) : str;
                 }
 
                 //后弹出子对话框输入名称和选择本地文件
@@ -387,11 +411,15 @@ namespace HZtest.ViewModels
                 }
                 if (string.IsNullOrEmpty(FileUploadRequest.FileName))
                     _message_service.ShowError("文件名称不能命名为空");
+                FileUploadRequest.LocatedPath = path;
 
-                FileUploadRequest.LocatedPath = SelectedNode.FullPath;
                 //请求接口实际执行上传到数控系统操作
+                var response = await _deviceService.UploadFileAsync(FileUploadRequest);
+                if (response.Code != 0)
+                {
+                    _message_service.ShowError($"上传异常: {response.Status}");
 
-
+                }
 
             }
             catch (Exception ex)

@@ -1,10 +1,12 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using HZtest.Models.Request;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -135,6 +137,121 @@ namespace HZtest.Universal
         //        throw;
         //    }
         //}
+        //public async Task<T?> SendAsync<T>(
+        //    HttpMethod method,
+        //    string path,
+        //    object? body = null,
+        //    CancellationToken cancellationToken = default)
+        //{
+        //    using var request = new HttpRequestMessage(method, path);
+
+        //    if (body != null)
+        //    {
+        //        var json = JsonSerializer.Serialize(body, _jsonOptions);
+        //        request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+        //    }
+
+        //    try
+        //    {
+        //        // ResponseHeadersRead 保持流式特性，避免大响应占用过多内存
+        //        var response = await _http.SendAsync(
+        //            request,
+        //            HttpCompletionOption.ResponseHeadersRead,
+        //            cancellationToken).ConfigureAwait(false);
+
+        //        _logger.LogDebug(
+        //            "Content-Type: {Type}, Encoding: {Encoding}",
+        //            response.Content.Headers.ContentType?.MediaType,
+        //            string.Join(",", response.Content.Headers.ContentEncoding));
+
+        //        response.EnsureSuccessStatusCode();
+
+        //        // 获取响应流（无需等待完整内容下载）
+        //        var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+
+        //        // 处理压缩（如果 HttpClientHandler 未配置自动解压）
+        //        Stream? decompressedStream = null;
+        //        try
+        //        {
+        //            var finalStream = stream;
+
+        //            if (response.Content.Headers.ContentEncoding.Contains("gzip"))
+        //            {
+        //                finalStream = decompressedStream = new GZipStream(
+        //                    stream,
+        //                    CompressionMode.Decompress,
+        //                    leaveOpen: false); // 注意：设为 false，让 GZipStream 关闭时同时关闭底层流
+        //            }
+        //            else if (response.Content.Headers.ContentEncoding.Contains("deflate"))
+        //            {
+        //                finalStream = decompressedStream = new DeflateStream(
+        //                    stream,
+        //                    CompressionMode.Decompress,
+        //                    leaveOpen: false);
+        //            }
+        //            // 关键分支：如果是 string 类型，直接读取文本（支持 G-code、URL 编码等）
+        //            if (typeof(T) == typeof(string))
+        //            {
+        //                using var reader = new StreamReader(finalStream, Encoding.UTF8);
+        //                var content = await reader.ReadToEndAsync(cancellationToken);
+
+        //                // 处理 URL 编码（如果 API 返回 %7B%22... 这种）
+        //                if (!string.IsNullOrEmpty(content) && content[0] == '%')
+        //                {
+        //                    // 检查是否整个内容都是 URL 编码（而不是像 G-code 这种只有开头有 %）
+        //                    // G-code 的 % 后面一般是数字或空行，URL 编码的 % 后面是十六进制
+        //                    if (LooksLikeUrlEncoded(content))
+        //                    {
+        //                        _logger.LogWarning("检测到 URL 编码响应，正在解码");
+        //                        content = Uri.UnescapeDataString(content);
+        //                    }
+        //                    // 否则保持原样（G-code 的 % 是合法的）
+        //                }
+
+        //                return (T?)(object?)content;
+        //            }
+
+        //            // 其他类型：走 JSON 反序列化（流式）
+        //            return await JsonSerializer.DeserializeAsync<T>(
+        //                finalStream, _jsonOptions, cancellationToken);
+        //        }
+        //        finally
+        //        {
+        //            // 确保解压流（如果有）被正确释放
+        //            if (decompressedStream != null)
+        //            {
+        //                await decompressedStream.DisposeAsync();
+        //            }
+        //            else
+        //            {
+        //                await stream.DisposeAsync();
+        //            }
+        //        }
+        //    }
+        //    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        //    {
+        //        _logger.LogInformation("请求被取消: {Method} {Path}", method, path);
+        //        throw;
+        //    }
+        //    catch (HttpRequestException ex)
+        //    {
+        //        _logger.LogError(ex, "HTTP 请求失败: {Method} {Path}", method, path);
+        //        throw;
+        //    }
+        //    catch (JsonException ex)
+        //    {
+        //        _logger.LogError(ex, "JSON 反序列化失败: {Method} {Path}", method, path);
+        //        throw;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "请求处理异常: {Method} {Path}", method, path);
+        //        throw;
+        //    }
+        //}
+
+
+
         public async Task<T?> SendAsync<T>(
             HttpMethod method,
             string path,
@@ -145,10 +262,25 @@ namespace HZtest.Universal
 
             if (body != null)
             {
-                var json = JsonSerializer.Serialize(body, _jsonOptions);
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                // 【关键】优先判断是否为 HttpContent（含 MultipartFormDataContent）
+                if (body is HttpContent httpContent)
+                {
+                    request.Content = httpContent; // 直接使用，保留 boundary/编码等元数据
+                }
+                else
+                {
+                    var json = JsonSerializer.Serialize(body, _jsonOptions);
+                    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                }
             }
-
+            if (request.Content != null)
+            {
+                _logger.LogInformation(
+                    "【DEBUG】Request Content-Type: {ContentType}\nBoundary: {Boundary}",
+                    request.Content.Headers.ContentType?.ToString() ?? "MISSING!",
+                    request.Content.Headers.ContentType?.Parameters
+                        .FirstOrDefault(p => p.Name == "boundary")?.Value ?? "N/A");
+            }
             try
             {
                 // ResponseHeadersRead 保持流式特性，避免大响应占用过多内存
@@ -244,6 +376,78 @@ namespace HZtest.Universal
             catch (Exception ex)
             {
                 _logger.LogError(ex, "请求处理异常: {Method} {Path}", method, path);
+                throw;
+            }
+        }
+
+
+
+        /// <summary>
+        /// 上传文件（multipart/form-data）
+        /// </summary>
+        /// <typeparam name="TResponse">API 响应类型（如 BaseResponse<string[][]>）</typeparam>
+        /// <param name="snCode">设备 SNCode</param>
+        /// <param name="request">上传请求参数</param>
+        /// <param name="cancellationToken">取消令牌</param>
+        /// <returns>API 响应</returns>
+        public async Task<TResponse?> UploadFileAsync<TResponse>(
+            string path,
+            FileUploadRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            // 1. 参数验证（前置校验，避免无效请求）
+            if (!request.IsValid(out var errorMsg))
+                throw new InvalidOperationException($"请求参数无效: {errorMsg}");
+
+            // 2. 构建 multipart/form-data 内容
+            using var multipartContent = new MultipartFormDataContent();
+
+            // 添加字符串参数（自动设置 ContentDisposition.Name）
+            multipartContent.Add(new StringContent(request.Path), "path");
+            multipartContent.Add(new StringContent(request.Operation), "operation");
+            multipartContent.Add(new StringContent(request.GetTargetFilePath()), "key");
+
+            // 3. 添加文件内容（流式读取，避免大文件内存爆炸）
+            var fileName = request.FileName
+                ?? Path.GetFileName(request.LocalFilePath)
+                ?? throw new InvalidOperationException("无法获取文件名");
+
+            // 使用 FileStream + StreamContent（内存友好）
+            var fileStream = new FileStream(
+                request.LocalFilePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                bufferSize: 8192,
+                useAsync: true);
+
+            var fileContent = new StreamContent(fileStream, 8192);
+            //fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/octet-stream");
+            //fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
+            //{
+            //    Name = "value",
+            //    FileName = fileName
+            //};
+
+            multipartContent.Add(fileContent, "value", "[object Object]");
+
+            try
+            {
+
+
+
+                // 4. 调用通用 SendAsync（已支持 MultipartFormDataContent）
+                return await SendAsync<TResponse>(
+                    HttpMethod.Post,
+                    path,
+                    multipartContent, // ✅ 直接传入 MultipartFormDataContent
+                    cancellationToken);
+            }
+            catch
+            {
+                // 确保文件流在异常时释放（MultipartFormDataContent 会 Dispose 内容）
+                fileStream?.Dispose();
+                fileContent?.Dispose();
                 throw;
             }
         }

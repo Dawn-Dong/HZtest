@@ -34,7 +34,7 @@ namespace HZtest.Models
 
 
 
-        }
+    }
 
     /// <summary>
     /// 文件详情
@@ -126,32 +126,58 @@ namespace HZtest.Models
     {
         private bool _isExpanded;
         private bool _isSelected;
-
+        /// <summary>
+        /// 文件名称/文件夹名称
+        /// </summary>
         public string Name { get; set; }
+        /// <summary>
+        /// 简洁文件路径
+        /// </summary>
         public string FullPath { get; set; }
+        /// <summary>
+        /// 文件类型
+        /// </summary>
         public FileTypeEnum Type { get; set; }      // 使用枚举
+        /// <summary>
+        /// 是否文件夹
+        /// </summary>
         public bool IsDirectory => Type == FileTypeEnum.Directory;  // 自动判断
+        /// <summary>
+        /// 文件大小
+        /// </summary>
         public int Size { get; set; }                // KB
 
         /// <summary>
         /// 完整文件路径
         /// </summary>
         public string CompleteFullPath => $"../prog/{FullPath}";
+        /// <summary>
+        /// 修改时间
+        /// </summary>
         public string ChangeTime { get; set; }       // 原始字符串
-
+        /// <summary>
+        /// 是否展开
+        /// </summary>
         public bool IsExpanded
         {
             get => _isExpanded;
             set { _isExpanded = value; OnPropertyChanged(); }
         }
-
+        /// <summary>
+        /// 是否选中
+        /// </summary>
         public bool IsSelected
         {
             get => _isSelected;
             set { _isSelected = value; OnPropertyChanged(); }
         }
-
+        /// <summary>
+        /// 子项集合
+        /// </summary>
         public ObservableCollection<FileNode> Children { get; } = new();
+        /// <summary>
+        /// 父节点下所有文件
+        /// </summary>
         public FileNode Parent { get; set; }
 
         // 辅助属性：格式化显示大小

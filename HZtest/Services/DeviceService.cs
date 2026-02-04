@@ -823,42 +823,39 @@ namespace HZtest.Services
         /// <param name="fileName"></param>
         /// <returns></returns>
 
-        public async Task<BaseResponse<FileOperationsModel>> UploadFileAsync(FileUploadRequest fileUploadRequest)
+        public async Task<BaseResponse<bool>> UploadFileAsync(FileUploadRequest fileUploadRequest)
         {
 
 
             if (string.IsNullOrEmpty(CurrentSNCode))
             {
-                return new BaseResponse<FileOperationsModel> { Status = "未设置设备 SNCode" };
+                return new BaseResponse<bool> { Status = "未设置设备 SNCode" };
             }
             try
             {
-                var request = new BaseRequest
-                {
-                    Operation = "get_keys",
-                    Items = new List<RequestItem>(),
-                };
-                request.Items.Add(new RequestItem
-                {
-                    Path = "/MACHINE/CONTROLLER/FILE",
-                });
 
-                var result = await _apiClient.PostAsync<BaseResponse<string[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
-                var fileOperationsModel = new FileOperationsModel();
-                fileOperationsModel.DirectoryFileList = result?.Value[0].ToList() ?? new List<string>();
-                var FilesDetails = await GetFilesDetailsAsync(fileOperationsModel.DirectoryFileList.ToArray());
-                fileOperationsModel.FileDetailsList = FilesDetails.Value ?? new List<FileDetails>();
+                var result = await _apiClient.UploadFileAsync<BaseResponse<string>>($"/v1/{CurrentSNCode}/file", fileUploadRequest).ConfigureAwait(false);
 
-                return new BaseResponse<FileOperationsModel>
+                if (result == null)
+                {
+                    return new BaseResponse<bool>
+                    {
+                        Code = -1,
+                        Status = "上传失败，未收到响应",
+                        Value = false,
+                    };
+                }
+
+                return new BaseResponse<bool>
                 {
                     Code = result?.Code ?? -1,
                     Status = result?.Status ?? "未知错误",
-                    Value = fileOperationsModel,
+                    Value = result?.Status == "SUCCESS",
                 };
             }
             catch (Exception ex)
             {
-                return new BaseResponse<FileOperationsModel>
+                return new BaseResponse<bool>
                 {
                     Status = $"错误: {ex.Message}",
                 };
