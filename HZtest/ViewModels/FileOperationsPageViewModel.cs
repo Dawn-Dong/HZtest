@@ -29,12 +29,30 @@ namespace HZtest.ViewModels
         private CancellationTokenSource _cts;
 
 
-        // 命令（业务逻辑）
+        // 命令（业务逻辑） 和XAML页面的按钮绑定
+        /// <summary>
+        /// 显示运行文件详情命令
+        /// </summary>
         public ICommand FileDetailsCommand { get; }
+        /// <summary>
+        /// 获取目录文件列表并构建树节点
+        /// </summary>
         public ICommand DirectoryFileListCommand { get; }
+        /// <summary>
+        /// 切换运行文件命令
+        /// </summary>
         public ICommand SwitchRunningFileCommand { get; }
-
+        /// <summary>
+        /// 上传文件命令
+        /// </summary>
         public ICommand UploadFileCommand { get; }
+        /// <summary>
+        /// 删除文件命令
+        /// </summary>
+
+        public ICommand DeleteFileCommand { get; }
+
+
         #region 树节点用
         public ObservableCollection<FileNode> TreeItems { get; } = new();
 
@@ -64,7 +82,7 @@ namespace HZtest.ViewModels
         #endregion
 
 
-
+        #region 页面绑定属性
         private string _currentRunningFile = string.Empty;
         /// <summary>
         /// 当前正在运行的文件
@@ -101,7 +119,7 @@ namespace HZtest.ViewModels
             get => _localFilePath;
             set { _localFilePath = value; OnPropertyChanged(); }
         }
-
+        #endregion
 
         public FileOperationsPageViewModel(IDialogService dialogService, IMessageService messageService, DeviceService deviceService)
         {
@@ -109,14 +127,18 @@ namespace HZtest.ViewModels
             _message_service = messageService ?? throw new ArgumentNullException(nameof(messageService));
             _deviceService = deviceService ?? throw new ArgumentNullException(nameof(deviceService));
 
-            // 绑定命令
+            // XAML页面的按钮绑定
             FileDetailsCommand = new RelayCommand(async () => await ExecuteReadFileDetailsAsync());
             SwitchRunningFileCommand = new RelayCommand(async () => await ExecuteSwitchRunningFileAsync());
             DirectoryFileListCommand = new RelayCommand(GetDirectoryFileList);
+            DeleteFileCommand = new AsyncRelayCommand(async () => await ExecuteDeleteFileAsync());
 
+            //弹窗绑定
             UploadFileCommand = new AsyncRelayCommand(OpenUploadFileDialogs);
+
         }
 
+        #region 命令实现
         /// <summary>
         /// 读取文件详情命令执行方法
         /// </summary>
@@ -125,8 +147,8 @@ namespace HZtest.ViewModels
         {
             // 读取文件详情
             var response = await _deviceService.GetTheCurrentRunningDetailsFileAsync(CurrentRunningFile);
-            //CurrentRunningFileDetails = response.Value.RunningDetailsFile ?? "加载为空或者错误了";
-            CurrentRunningFileDetails = "这是 G-code（数控编程语言），显然不是 JSON 格式。报错是因为 System.Text.Json 尝试把 %1234 解析为 JSON，但 JSON 不允许以 % 开头。\r\n你需要根据返回类型做分支处理：如果是 string 类型就直接返回文本，否则尝试 JSON 反序列化。\r\ncsharp\r\n复制\r\npublic async Task<T?> SendAsync<T>(\r\n    HttpMethod method, \r\n    string path, \r\n    object? body = null, \r\n    CancellationToken cancellationToken = default)\r\n{\r\n    using var request = new HttpRequestMessage(method, path);\r\n\r\n    if (body != null)\r\n    {\r\n        var json = JsonSerializer.Serialize(body, _jsonOptions);\r\n        request.Content = new StringContent(json, Encoding.UTF8, \"application/json\");\r\n    }\r\n\r\n    try\r\n    {\r\n        var response = await _http.SendAsync(\r\n            request, \r\n            HttpCompletionOption.ResponseHeadersRead, \r\n            cancellationToken).ConfigureAwait(false);\r\n        \r\n        _logger.LogDebug(\r\n            \"Content-Type: {Type}, Encoding: {Encoding}\",\r\n            response.Content.Headers.ContentType?.MediaType,\r\n            string.Join(\",\", response.Content.Headers.ContentEncoding));\r\n        \r\n        response.EnsureSuccessStatusCode();\r\n\r\n        // 获取原始流\r\n        var stream = await response.Content.ReadAsStreamAsync(cancellationToken);\r\n        Stream? decompressedStream = null;\r\n        \r\n        try\r\n        {\r\n            var finalStream = stream;\r\n            \r\n            if (response.Content.Headers.ContentEncoding.Contains(\"gzip\"))\r\n            {\r\n                finalStream = decompressedStream = new GZipStream(\r\n                    stream, CompressionMode.Decompress, leaveOpen: false);\r\n            }\r\n            else if (response.Content.Headers.ContentEncoding.Contains(\"deflate\"))\r\n            {\r\n                finalStream = decompressedStream = new DeflateStream(\r\n                    stream, CompressionMode.Decompress, leaveOpen: false);\r\n            }\r\n\r\n            // 🔑 关键分支：如果是 string 类型，直接读取文本（支持 G-code、URL 编码等）\r\n            if (typeof(T) == typeof(string))\r\n            {\r\n                using var reader = new StreamReader(finalStream, Encoding.UTF8);\r\n                var content = await reader.ReadToEndAsync(cancellationToken);\r\n                \r\n                // 处理 URL 编码（如果 API 返回 %7B%22... 这种）\r\n                if (!string.IsNullOrEmpty(content) && content[0] == '%')\r\n                {\r\n                    // 检查是否整个内容都是 URL 编码（而不是像 G-code 这种只有开头有 %）\r\n                    // G-code 的 % 后面一般是数字或空行，URL 编码的 % 后面是十六进制\r\n                    if (LooksLikeUrlEncoded(content))\r\n                    {\r\n                        _logger.LogWarning(\"检测到 URL 编码响应，正在解码\");\r\n                        content = Uri.UnescapeDataString(content);\r\n                    }\r\n                    // 否则保持原样（G-code 的 % 是合法的）\r\n                }\r\n                \r\n                return (T?)(object?)content;\r\n            }\r\n            \r\n            // 其他类型：走 JSON 反序列化（流式）\r\n            return await JsonSerializer.DeserializeAsync<T>(\r\n                finalStream, _jsonOptions, cancellationToken);\r\n        }\r\n        finally\r\n        {\r\n            if (decompressedStream != null)\r\n                await decompressedStream.DisposeAsync();\r\n            else\r\n                await stream.DisposeAsync();\r\n        }\r\n    }\r\n    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)\r\n    {\r\n        _logger.LogInformation(\"请求被取消: {Method} {Path}\", method, path);\r\n        throw;\r\n    }\r\n    catch (HttpRequestException ex)\r\n    {\r\n        _logger.LogError(ex, \"HTTP 请求失败: {Method} {Path}\", method, path);\r\n        throw;\r\n    }\r\n    catch (JsonException ex)\r\n    {\r\n        _logger.LogError(ex, \"JSON 反序列化失败: {Method} {Path}\", method, path);\r\n        throw;\r\n    }\r\n    catch (Exception ex)\r\n    {\r\n        _logger.LogError(ex, \"请求处理异常: {Method} {Path}\", method, path);\r\n        throw;\r\n    }\r\n}\r\n\r\n//  helper：判断是否是 URL 编码（简单启发式）\r\nprivate static bool LooksLikeUrlEncoded(string content)\r\n{\r\n    // 如果内容里包含大量 %XX 模式（X 是十六进制字符），则认为是 URL 编码\r\n    // G-code 的 % 后面通常是数字（如 %1234），不是十六进制对\r\n    if (content.Length < 3) return false;\r\n    \r\n    // 检查前几个 % 后面是否跟着十六进制字符\r\n    int hexCount = 0;\r\n    for (int i = 0; i < content.Length - 2; i++)\r\n    {\r\n        if (content[i] == '%')\r\n        {\r\n            if (char.IsAsciiHexDigit(content[i + 1]) && char.IsAsciiHexDigit(content[i + 2]))\r\n            {\r\n                hexCount++;\r\n                if (hexCount >= 3) return true; // 有 3 个连续的 %XX，大概率是 URL 编码\r\n            }\r\n            else\r\n            {\r\n                // 遇到 % 后面不是十六进制，可能是 G-code 的 %\r\n                return false;\r\n            }\r\n        }\r\n    }\r\n    return false;\r\n}\r\n调用示例：\r\ncsharp\r\n复制\r\n// 获取 G-code 文本（直接返回字符串，不经过 JSON 解析）\r\nvar gcode = await client.SendAsync<string>(HttpMethod.Get, \"/api/program/123\");\r\n\r\n// 获取 JSON 对象（正常反序列化）\r\nvar result = await client.SendAsync<MyDto>(HttpMethod.Get, \"/api/data\");\r\n关键点：\r\ntypeof(T) == typeof(string) 时直接读文本，保留 G-code 的 % 前缀\r\nLooksLikeUrlEncoded 辅助方法区分 G-code（%1234）和 URL 编码（%7B%22），避免误伤\r\n非字符串类型才走 JSON 反序列化逻辑";
+            CurrentRunningFileDetails = response.Value.RunningDetailsFile ?? "加载为空或者错误了";
+            // CurrentRunningFileDetails = "这是 G-code（数控编程语言），显然不是 JSON 格式。报错是因为 System.Text.Json 尝试把 %1234 解析为 JSON，但 JSON 不允许以 % 开头。\r\n你需要根据返回类型做分支处理：如果是 string 类型就直接返回文本，否则尝试 JSON 反序列化。\r\ncsharp\r\n复制\r\npublic async Task<T?> SendAsync<T>(\r\n    HttpMethod method, \r\n    string path, \r\n    object? body = null, \r\n    CancellationToken cancellationToken = default)\r\n{\r\n    using var request = new HttpRequestMessage(method, path);\r\n\r\n    if (body != null)\r\n    {\r\n        var json = JsonSerializer.Serialize(body, _jsonOptions);\r\n        request.Content = new StringContent(json, Encoding.UTF8, \"application/json\");\r\n    }\r\n\r\n    try\r\n    {\r\n        var response = await _http.SendAsync(\r\n            request, \r\n            HttpCompletionOption.ResponseHeadersRead, \r\n            cancellationToken).ConfigureAwait(false);\r\n        \r\n        _logger.LogDebug(\r\n            \"Content-Type: {Type}, Encoding: {Encoding}\",\r\n            response.Content.Headers.ContentType?.MediaType,\r\n            string.Join(\",\", response.Content.Headers.ContentEncoding));\r\n        \r\n        response.EnsureSuccessStatusCode();\r\n\r\n        // 获取原始流\r\n        var stream = await response.Content.ReadAsStreamAsync(cancellationToken);\r\n        Stream? decompressedStream = null;\r\n        \r\n        try\r\n        {\r\n            var finalStream = stream;\r\n            \r\n            if (response.Content.Headers.ContentEncoding.Contains(\"gzip\"))\r\n            {\r\n                finalStream = decompressedStream = new GZipStream(\r\n                    stream, CompressionMode.Decompress, leaveOpen: false);\r\n            }\r\n            else if (response.Content.Headers.ContentEncoding.Contains(\"deflate\"))\r\n            {\r\n                finalStream = decompressedStream = new DeflateStream(\r\n                    stream, CompressionMode.Decompress, leaveOpen: false);\r\n            }\r\n\r\n            // 🔑 关键分支：如果是 string 类型，直接读取文本（支持 G-code、URL 编码等）\r\n            if (typeof(T) == typeof(string))\r\n            {\r\n                using var reader = new StreamReader(finalStream, Encoding.UTF8);\r\n                var content = await reader.ReadToEndAsync(cancellationToken);\r\n                \r\n                // 处理 URL 编码（如果 API 返回 %7B%22... 这种）\r\n                if (!string.IsNullOrEmpty(content) && content[0] == '%')\r\n                {\r\n                    // 检查是否整个内容都是 URL 编码（而不是像 G-code 这种只有开头有 %）\r\n                    // G-code 的 % 后面一般是数字或空行，URL 编码的 % 后面是十六进制\r\n                    if (LooksLikeUrlEncoded(content))\r\n                    {\r\n                        _logger.LogWarning(\"检测到 URL 编码响应，正在解码\");\r\n                        content = Uri.UnescapeDataString(content);\r\n                    }\r\n                    // 否则保持原样（G-code 的 % 是合法的）\r\n                }\r\n                \r\n                return (T?)(object?)content;\r\n            }\r\n            \r\n            // 其他类型：走 JSON 反序列化（流式）\r\n            return await JsonSerializer.DeserializeAsync<T>(\r\n                finalStream, _jsonOptions, cancellationToken);\r\n        }\r\n        finally\r\n        {\r\n            if (decompressedStream != null)\r\n                await decompressedStream.DisposeAsync();\r\n            else\r\n                await stream.DisposeAsync();\r\n        }\r\n    }\r\n    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)\r\n    {\r\n        _logger.LogInformation(\"请求被取消: {Method} {Path}\", method, path);\r\n        throw;\r\n    }\r\n    catch (HttpRequestException ex)\r\n    {\r\n        _logger.LogError(ex, \"HTTP 请求失败: {Method} {Path}\", method, path);\r\n        throw;\r\n    }\r\n    catch (JsonException ex)\r\n    {\r\n        _logger.LogError(ex, \"JSON 反序列化失败: {Method} {Path}\", method, path);\r\n        throw;\r\n    }\r\n    catch (Exception ex)\r\n    {\r\n        _logger.LogError(ex, \"请求处理异常: {Method} {Path}\", method, path);\r\n        throw;\r\n    }\r\n}\r\n\r\n//  helper：判断是否是 URL 编码（简单启发式）\r\nprivate static bool LooksLikeUrlEncoded(string content)\r\n{\r\n    // 如果内容里包含大量 %XX 模式（X 是十六进制字符），则认为是 URL 编码\r\n    // G-code 的 % 后面通常是数字（如 %1234），不是十六进制对\r\n    if (content.Length < 3) return false;\r\n    \r\n    // 检查前几个 % 后面是否跟着十六进制字符\r\n    int hexCount = 0;\r\n    for (int i = 0; i < content.Length - 2; i++)\r\n    {\r\n        if (content[i] == '%')\r\n        {\r\n            if (char.IsAsciiHexDigit(content[i + 1]) && char.IsAsciiHexDigit(content[i + 2]))\r\n            {\r\n                hexCount++;\r\n                if (hexCount >= 3) return true; // 有 3 个连续的 %XX，大概率是 URL 编码\r\n            }\r\n            else\r\n            {\r\n                // 遇到 % 后面不是十六进制，可能是 G-code 的 %\r\n                return false;\r\n            }\r\n        }\r\n    }\r\n    return false;\r\n}\r\n调用示例：\r\ncsharp\r\n复制\r\n// 获取 G-code 文本（直接返回字符串，不经过 JSON 解析）\r\nvar gcode = await client.SendAsync<string>(HttpMethod.Get, \"/api/program/123\");\r\n\r\n// 获取 JSON 对象（正常反序列化）\r\nvar result = await client.SendAsync<MyDto>(HttpMethod.Get, \"/api/data\");\r\n关键点：\r\ntypeof(T) == typeof(string) 时直接读文本，保留 G-code 的 % 前缀\r\nLooksLikeUrlEncoded 辅助方法区分 G-code（%1234）和 URL 编码（%7B%22），避免误伤\r\n非字符串类型才走 JSON 反序列化逻辑";
         }
 
         /// <summary>
@@ -164,6 +186,49 @@ namespace HZtest.ViewModels
 
         }
 
+        /// <summary>
+        /// 删除文件操作命令执行方法
+        /// </summary>
+        /// <returns></returns>
+        private async Task ExecuteDeleteFileAsync()
+        {
+            if (SelectedNode == null)
+            {
+                _message_service.ShowError("请先选择一个要删除文件。");
+                return;
+            }
+            if (SelectedNode.IsDirectory)
+            {
+                _message_service.ShowError("不可删除文件夹。");
+                return;
+            }
+            var confirm = await _dialogService.ShowConfirmAsync(
+                $"确定要删除 '{SelectedNode.Name}' 吗？此操作不可撤销。",
+                "确认删除");
+            if (!confirm) return;
+
+
+
+            var response = await _deviceService.DeleteFileAsync(SelectedNode.FullPath);
+            if (response.Value)
+            {
+                _message_service.ShowMessage("删除成功！");
+                // 从树中移除节点
+                if (SelectedNode.Parent != null)
+                {
+                    SelectedNode.Parent.Children.Remove(SelectedNode);
+                }
+                else
+                {
+                    TreeItems.Remove(SelectedNode);
+                }
+            }
+            else
+            {
+                _message_service.ShowError("删除失败！");
+            }
+        }
+        #endregion
         /// <summary>
         /// 启动数据监控
         /// </summary>
@@ -212,73 +277,11 @@ namespace HZtest.ViewModels
             CurrentRunningFile = fileOperationsModel.Value.RunningFile ?? "加载错误";
         }
 
-        #region 树节点
+        #region 树节点实现方法
         /// <summary>
         /// 获取目录文件列表并构建树节点
         /// </summary>
         /// <returns></returns>
-        //public async void GetDirectoryFileList()
-        //{
-        //    var response = await _deviceService.GetDirectoryFileWithDetailsListAsync();
-        //    if (response?.Value?.FileDetailsList is not List<FileDetails> paths) return;
-
-        //    TreeItems.Clear();
-        //    var nodeCache = new Dictionary<string, FileNode>(StringComparer.OrdinalIgnoreCase);
-
-        //    // 排序确保先处理短的（父级）路径
-        //    foreach (var path in paths.OrderBy(p => p))
-        //    {
-        //        CreateNodeRecursively(path, nodeCache);
-        //    }
-        //}
-
-        //private FileNode CreateNodeRecursively(string path, Dictionary<string, FileNode> cache)
-        //{
-        //    // 已存在直接返回（防止重复创建）
-        //    if (cache.TryGetValue(path, out var existing)) return existing;
-
-        //    var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        //    var name = parts.Last();
-
-        //    // 确定父路径
-        //    string parentPath = null;
-        //    if (parts.Length > 1)
-        //    {
-        //        parentPath = string.Join("/", parts.Take(parts.Length - 1));
-        //    }
-
-        //    FileNode parent = null;
-        //    if (parentPath != null)
-        //    {
-        //        // 递归确保父节点存在（父节点肯定是文件夹）
-        //        parent = CreateNodeRecursively(parentPath, cache);
-        //        parent.IsDirectory = true;  // 有子项，强制标记为文件夹
-        //        parent.IsExpanded = true;   // 默认展开（可选）
-        //    }
-
-        //    var node = new FileNode
-        //    {
-        //        Name = name,
-        //        FullPath = path,
-        //        IsDirectory = false,  // 初始为文件，如果有子项会被改为 true
-        //        Parent = parent
-        //    };
-
-        //    cache[path] = node;
-
-        //    if (parent != null)
-        //    {
-        //        parent.Children.Add(node);
-        //    }
-        //    else
-        //    {
-        //        // 没有父路径，挂在根（这就是你说的"统一分组"）
-        //        TreeItems.Add(node);
-        //    }
-
-        //    return node;
-        //}
-
         public async void GetDirectoryFileList()
         {
             var response = await _deviceService.GetDirectoryFileWithDetailsListAsync();
@@ -355,6 +358,11 @@ namespace HZtest.ViewModels
         #endregion
 
 
+        /// <summary>
+        /// 打开上传文件对话框和相关逻辑处理
+        /// </summary>
+        /// <returns></returns>
+
         private async Task OpenUploadFileDialogs()
         {
             try
@@ -426,11 +434,7 @@ namespace HZtest.ViewModels
             {
                 _message_service.ShowError($"对话框异常: {ex.Message}");
             }
-
-
         }
-
-
 
         // 清理方法（页面关闭时调用）
         public void Cleanup()

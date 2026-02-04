@@ -862,6 +862,53 @@ namespace HZtest.Services
             }
         }
 
+        /// <summary>
+        /// 删除机床上的文件
+        /// </summary>
+        /// <param name="fullNameArray">文件名称数组</param>
+        /// <returns></returns>
+        public async Task<BaseResponse<bool>> DeleteFileAsync(string path)
+        {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<bool> { Status = "未设置设备 SNCode" };
+            }
+            if (string.IsNullOrEmpty(path))
+            {
+                return new BaseResponse<bool> { Status = "删除文件路径不能为空" };
+            }
+            try
+            {
+                var request = new BaseRequest
+                {
+                    Operation = "delete",
+                    Items = new List<RequestItem>(),
+                };
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/FILE",
+                    Key = path
+                });
+
+                var result = await _apiClient.GetAsync<BaseResponse<bool[]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                //var fileOperations = result?.Value[0];
+
+                return new BaseResponse<bool>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = result?.Value[0] ?? false
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<bool>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
+
 
         #endregion
 

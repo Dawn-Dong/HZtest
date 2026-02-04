@@ -178,7 +178,9 @@
             </TreeView>
 
         </Grid>
-        <Button Grid.Row="1" Grid.Column="0" Content="刷新文件列表" Height="40" Margin="47,17,255,18" Command="{Binding DirectoryFileListCommand}"/>
-        <Button Grid.Row="1" Grid.Column="0" Content="上传文件" Height="40" Margin="271,17,31,18" Command="{Binding UploadFileCommand}"/>
+        <Button Grid.Row="1" Grid.Column="0" Content="刷新文件列表" Height="40" Margin="22,17,280,18" Command="{Binding DirectoryFileListCommand}"/>
+        <Button Grid.Row="1" Grid.Column="0" Content="上传文件" Height="40" Margin="278,17,24,18" Command="{Binding UploadFileCommand}"/>
+        <Button Grid.Row="1" Grid.Column="0" Content="删除文件" Height="40" Margin="151,17,151,18" Command="{Binding DeleteFileCommand}"/>
+        
     </Grid>
 </Page>
