@@ -139,7 +139,7 @@ namespace HZtest.Converters
         /// <summary>
         /// 安全获取枚举的 Description 特性值（支持无效值返回）
         /// </summary>
-        public static string GetDescription(this Enum value)
+        public static string GetEnumDescription(this Enum value)
         {
             var field = value.GetType().GetField(value.ToString());
             if (field == null) return value.ToString();
@@ -162,6 +162,49 @@ namespace HZtest.Converters
             }
             return defaultDescription;
         }
+
+
+
+
+
+        /// <summary>
+        /// 将枚举名称字符串（如 "free"）转换为对应的 [Description] 值（如 "空闲"）
+        /// </summary>
+        /// <typeparam name="TEnum">目标枚举类型</typeparam>
+        /// <param name="enumName">枚举项的字符串名称（不区分大小写）</param>
+        /// <returns>找到则返回 Description 值；未找到返回 null</returns>
+        public static string? GetEnumDescription<TEnum>(this string enumName) where TEnum : struct, Enum
+        {
+            // 步骤1：尝试将字符串转为枚举值（忽略大小写）
+            if (!Enum.TryParse(enumName, ignoreCase: true, out TEnum enumValue))
+                return null; // 字符串不是有效枚举名
+
+            // 步骤2：获取枚举值对应的字段信息（如 Free 字段）
+            FieldInfo? field = typeof(TEnum).GetField(enumValue.ToString());
+            if (field == null)
+                return null;
+
+            // 步骤3：读取字段上的 [Description] 特性
+            DescriptionAttribute? attr = field.GetCustomAttribute<DescriptionAttribute>();
+
+            // 步骤4：返回 Description 值（如 "空闲"），无特性则返回 null
+            return attr?.Description;
+        }
+
+        /// <summary>
+        /// 将枚举名称字符串（如 "free"）转换为对应的 枚举 值
+        /// </summary>
+        /// <typeparam name="TEnum">目标枚举类型</typeparam>
+        /// <param name="enumName">枚举项的字符串名称（不区分大小写）</param>
+        /// <returns>找到则返回 Description 值；未找到返回 null</returns>
+        public static TEnum? StringToEnum<TEnum>(this string enumName) where TEnum : struct, Enum
+        {
+            // 步骤1：尝试将字符串转为枚举值（忽略大小写）
+            if (!Enum.TryParse(enumName, ignoreCase: true, out TEnum enumValue))
+                return null; // 字符串不是有效枚举名
+            return enumValue;
+        }
+
 
         /// <summary>
         /// 从 string[][] 中提取单一值（取 [0][0]）

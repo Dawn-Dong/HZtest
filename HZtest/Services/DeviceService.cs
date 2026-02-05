@@ -386,11 +386,11 @@ namespace HZtest.Services
         /// <summary>
         /// 获取运行模式（实例方法）
         /// </summary>
-        public async Task<BaseResponse<string>> GetOperationModeAsync()
+        public async Task<BaseResponse<DevOperationModeEnum>> GetOperationModeAsync()
         {
             if (string.IsNullOrEmpty(CurrentSNCode))
             {
-                return new BaseResponse<string> { Status = "未设置设备 SNCode" };
+                return new BaseResponse<DevOperationModeEnum> { Status = "未设置设备 SNCode" };
             }
 
             try
@@ -415,16 +415,16 @@ namespace HZtest.Services
                     operationMode = ApiDataParser.ParseFromRequest<OperationMode>(request, result.Value);
                 }
 
-                return new BaseResponse<string>
+                return new BaseResponse<DevOperationModeEnum>
                 {
                     Code = result?.Code ?? -1,
                     Status = result?.Status ?? "未知错误",
-                    Value = UniversalValueConversion.GetDescriptionFromInt<DevOperationModeEnum>(operationMode.CurrentMode),
+                    Value = (DevOperationModeEnum)operationMode.CurrentMode,
                 };
             }
             catch (Exception ex)
             {
-                return new BaseResponse<string>
+                return new BaseResponse<DevOperationModeEnum>
                 {
                     Status = $"错误: {ex.Message}",
                 };
@@ -524,6 +524,8 @@ namespace HZtest.Services
             }
         }
         #endregion
+
+
         #region 文件操作页面接口
         /// <summary>
         /// 获取当前运行文件名称
@@ -912,7 +914,51 @@ namespace HZtest.Services
 
         #endregion
 
+        #region 状态信息的获取
 
+        /// <summary>
+        /// 获取设备运行状态
+        /// </summary>
+        /// <returns></returns>
+        public async Task<BaseResponse<DeviceStateEnum>> GetDeviceStateAsync()
+        {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<DeviceStateEnum> { Status = "未设置设备 SNCode" };
+            }
+
+            try
+            {
+                var request = new BaseRequest
+                {
+                    Operation = "get_value",
+                    Items = new List<RequestItem>(),
+                };
+
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/STATUS",
+                });
+
+                var result = await _apiClient.PostAsync<BaseResponse<string[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                var state = result?.Value.ExtractFirstValue() ?? string.Empty;
+                return new BaseResponse<DeviceStateEnum>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = state.StringToEnum<DeviceStateEnum>() ?? DeviceStateEnum.Error,
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<DeviceStateEnum>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
+
+        #endregion
 
 
     }

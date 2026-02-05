@@ -20,16 +20,16 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0" Text="上传文件到设备" FontSize="16" FontWeight="Bold" Margin="0,0,0,20"/>
+            <TextBlock Grid.Row="0" Text="上传程序到设备" FontSize="16" FontWeight="Bold" Margin="0,0,0,20"/>
 
             <StackPanel Grid.Row="1"   Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" >
-                <TextBlock Text="文件命名：" FontSize="13" FontWeight="Bold" Margin="10,0" VerticalAlignment="Center"/>
+                <TextBlock Text="程序命名：" FontSize="13" FontWeight="Bold" Margin="10,0" VerticalAlignment="Center"/>
                 <TextBox x:Name="FileNameTextBox" Text="{Binding FileName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="200" />
             </StackPanel>
 
 
             <StackPanel Grid.Row="2"   Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" >
-                <TextBlock Text="上传文件：" FontSize="13" FontWeight="Bold" Margin="10,0" VerticalAlignment="Center"/>
+                <TextBlock Text="上传程序：" FontSize="13" FontWeight="Bold" Margin="10,0" VerticalAlignment="Center"/>
                 <TextBox  Text="{Binding LocalFilePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="200" IsReadOnly="True" Background="#FFA4A4A4" BorderBrush="Gray"/>
                 <Button Content="浏览..."  Command="{Binding SelectFileCommand}" Margin="5,0"/>
             </StackPanel>

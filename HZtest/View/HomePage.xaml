@@ -9,10 +9,13 @@
       d:DesignHeight="450" d:DesignWidth="800"
       Title="HomePage">
 
-    <!-- 设置DataContext --><!--
+    <!-- 设置DataContext -->
+    <!--
     <Page.DataContext>
         <vm:HomePageViewModel/>
-        --><!-- 绑定ViewModel --><!--
+        -->
+    <!-- 绑定ViewModel -->
+    <!--
     </Page.DataContext>-->
 
 
@@ -117,7 +120,7 @@
             </Grid.RowDefinitions>
             <TextBlock Grid.Row="0" Grid.Column="0"  Grid.ColumnSpan="2"  Text="{Binding MainAxisSpeedDisplay}" Foreground="Black" FontSize="30"   TextAlignment="Left" VerticalAlignment="Center" HorizontalAlignment="Left"  ></TextBlock>
 
-            
+
             <!-- 替换原 TextBlock，使用 StackPanel 水平排列 -->
             <StackPanel Grid.Row="1" Grid.Column="0" 
             Orientation="Horizontal" 
@@ -134,12 +137,34 @@
                     Style="{StaticResource IconButtonStyle}"
                     ToolTip="切换运行模式"
                     Margin="8,0,0,0">
-                        <Viewbox Width="24" Height="24">
-                            <Path Data="{StaticResource ModeSwitch}" 
+                    <Viewbox Width="24" Height="24">
+                        <Path Data="{StaticResource ModeSwitch}" 
                           Fill="{Binding ModeIconColor, FallbackValue=#3e0505}"/>
-                        </Viewbox>
+                    </Viewbox>
                 </Button>
             </StackPanel>
+
+            <StackPanel Grid.Row="1" Grid.Column="1" 
+                Orientation="Horizontal" 
+                VerticalAlignment="Center" 
+                HorizontalAlignment="Left">
+                                <!-- 文字部分 -->
+                <TextBlock Text="状态：" 
+                    Foreground="Black" FontSize="30" 
+                    VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding DeviceStateText}" FontSize="24" FontWeight="Bold" VerticalAlignment="Center" >
+                    <TextBlock.Foreground>
+                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                            <GradientStop Color="#FF1F279E"/>
+                            <GradientStop Color="#FF38F0F7" Offset="1"/>
+                            <GradientStop Color="#FF5430ED" Offset="0.5"/>
+                        </LinearGradientBrush>
+                    </TextBlock.Foreground>
+                </TextBlock>
+
+            </StackPanel>
+
+
 
 
 

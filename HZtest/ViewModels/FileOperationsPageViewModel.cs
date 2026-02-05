@@ -177,6 +177,41 @@ namespace HZtest.ViewModels
                 _message_service.ShowError("选中的文件完整路径无效。");
                 return;
             }
+            //加卡控状态卡控和轴归零卡控
+
+            //先确保手动和空闲状态
+            var operationMode = await _deviceService.GetOperationModeAsync();
+            if (operationMode.Value != DevOperationModeEnum.Jog)
+            {
+                _message_service.ShowError("先切换手动模式。");
+                return;
+            }
+            var deviceState = await _deviceService.GetDeviceStateAsync();
+            if (deviceState.Value != DeviceStateEnum.Free)
+            {
+                _message_service.ShowError("先确保设备现在是空闲状态。");
+                return;
+            }
+            //// 1. 调用你的接口获取数据
+            var allAxisData = await _deviceService.BatchGetAllActualAndRemainingFeedAsync();
+            //判断数据
+            const double ZeroThreshold = 0.0;
+
+            bool IsAllAxesStopped = allAxisData.Value != null &&
+                                    allAxisData.Value.Count >= 5 && // 确保有5轴数据
+                                    allAxisData.Value
+                                        .Take(5) // 仅检查前5轴（X/Y/Z/B/C）
+                                        .All(axis => axis.ActualFeedRate == ZeroThreshold
+                                        && !double.IsNaN(axis.ActualFeedRate) && // 实际可省略（0.0 != NaN）
+                                           !double.IsInfinity(axis.ActualFeedRate));
+            if (!IsAllAxesStopped)
+            {
+                _message_service.ShowError("先将设备各个轴归零。");
+                return;
+            }
+
+
+
             var response = await _deviceService.SetSwitchRunningFileAsync(SelectedNode.CompleteFullPath);
             if (response.Value)
                 _message_service.ShowMessage("切换成功！");

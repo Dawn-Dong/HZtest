@@ -68,7 +68,7 @@ namespace HZtest.Models
     /// <summary>
     /// 设备运行模式枚举
     /// </summary>
-    public enum DevOperationModeEnum 
+    public enum DevOperationModeEnum
     {
         /// <summary>
         /// 复位
@@ -110,7 +110,7 @@ namespace HZtest.Models
         /// 程序PLC控制
         /// </summary>
         [Description("PMC控制")]
-        PMC =6,
+        PMC = 6,
 
         /// <summary>
         /// 手动数据输入/单段运行
@@ -118,6 +118,9 @@ namespace HZtest.Models
         [Description("手动数据输入")]
         MDI_SBL = 7,
     }
+    /// <summary>
+    /// 文件类型枚举
+    /// </summary>
     public enum FileTypeEnum
     {
         /// <summary>
@@ -137,6 +140,34 @@ namespace HZtest.Models
         /// </summary>
         [Description("目录")]
         Directory = 1,
+    }
+    /// <summary>
+    /// 设备状态枚举
+    /// </summary>
+    public enum DeviceStateEnum
+    {
+        /// <summary>
+        /// 错误模式
+        /// </summary>
+        [Description("未知模式错误")]
+        Error = -1,
+
+        /// <summary>
+        /// 空闲
+        /// </summary>
+        [Description("空闲")]
+        Free = 1,
+        /// <summary>
+        /// 保持状态
+        /// </summary>
+        [Description("保持状态")]
+        Holding = 2,
+
+        /// <summary>
+        /// 运行状态
+        /// </summary>
+        [Description("运行状态")]
+        Running = 3,
     }
 
 }

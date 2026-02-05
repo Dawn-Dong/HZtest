@@ -54,7 +54,7 @@ namespace HZtest.ViewModels
         public ICommand StartCommand { get; }
         public ICommand PauseCommand { get; }
 
-        
+
         public ICommand OpenModeSelectionCommand { get; }
 
 
@@ -274,6 +274,22 @@ namespace HZtest.ViewModels
             }
         }
         public string MainAxisSpeedDisplay => $"主轴实际速度: {MainAxisActualSpeed:F1}";
+
+
+        private string _deviceState = "未知"; // 默认值
+        /// <summary>
+        /// 设备状态
+        /// </summary>
+        public string DeviceStateText
+        {
+            get => _deviceState;
+            set
+            {
+                _deviceState = value;
+                OnPropertyChanged(); // 通知UI更新
+            }
+        }
+
         #endregion
 
 
@@ -291,7 +307,7 @@ namespace HZtest.ViewModels
                     await GetStartPauseButtonStateAsync();
                     await GetActualSpindleSpeedAsync();
                     await GetOperationModeAsync();
-
+                    await GetDeviceStateAsync();
 
                     // 3. 等待（避免CPU占用过高）
                     await Task.Delay(100, _cts.Token);
@@ -357,7 +373,7 @@ namespace HZtest.ViewModels
                     // 用户点击了确定
                     CurrentModeValue = result.Value; // 更新本地状态
                     var setResult = await _deviceService.SetOperationModeAsync((DevOperationModeEnum)CurrentModeValue);
-                    if (setResult.Code ==0)
+                    if (setResult.Code == 0)
                     {
                         _message_service.ShowMessage($"设置成功");
                     }
@@ -430,12 +446,26 @@ namespace HZtest.ViewModels
             var actualSpindleSpeed = await _deviceService.GetActualSpindleSpeedAsync();
             MainAxisActualSpeed = actualSpindleSpeed.Value.ToString() ?? "0";
         }
+        /// <summary>
+        /// 获取运行模式
+        /// </summary>
+        /// <returns></returns>
 
         private async Task GetOperationModeAsync()
         {
-            var cs = await _deviceService.GetOperationModeAsync();
-            OperationMode = cs.Value.ToString();
+            var operationMode = await _deviceService.GetOperationModeAsync();
+            OperationMode = operationMode.Value.GetDescription();
         }
+        /// <summary>
+        /// 获取设备状态
+        /// </summary>
+        /// <returns></returns>
+        private async Task GetDeviceStateAsync()
+        {
+            var deviceState = await _deviceService.GetDeviceStateAsync();
+            DeviceStateText = deviceState.Value.GetDescription();
+        }
+
 
         #endregion
 
