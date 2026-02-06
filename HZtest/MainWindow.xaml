@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:HZtest"
+        xmlns:behaviors="clr-namespace:HZtest.AdditionalUIAttributes_附加UI属性"
         mc:Ignorable="d"
         Title="华中数控" Height="550" Width="990">
     <Grid Name="RootGrid">
@@ -26,10 +27,45 @@
         <Border Grid.Column="0" Background="LightGray" Grid.RowSpan="6" />
         <Button Content="主页"  Grid.Column="0"  Grid.Row="0"  Click="HomeButton_Click"/>
         <Button Content="文件"  Grid.Column="0"  Grid.Row="1"  Click="FileButton_Click"/>
-        
-        
+        <Button Content="报警信息"  Grid.Column="0"  Grid.Row="2"  Click="AlarmInfoButton_Click"/>
+
         <Frame Grid.Column="1"  Grid.RowSpan="6" x:Name="MainFrame" NavigationUIVisibility="Hidden"/>
-        <TextBlock x:Name="StatusTextBlock" Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="2" FontSize="16" FontWeight="Bold"  />
+
+        <!--增加左右结构 右边做错误信息的跑马灯提示 左边依旧提示当前运行设备-->
+        <Grid Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="2">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock x:Name="StatusTextBlock"  Grid.Column="0" FontSize="16" FontWeight="Bold"  />
+
+            <Border Grid.Column="1"  >
+                <Canvas  ClipToBounds="True">
+                    <TextBlock
+                           Text="{Binding AlertMessageText}" 
+                           FontSize="14" 
+                           FontWeight="Bold"
+                           behaviors:MainWindowMarqueeHelper.IsMarquee="{Binding IsMarqueeEnabled}"
+                           behaviors:MainWindowMarqueeHelper.Speed="70"
+                        >
+
+                        <TextBlock.Foreground>
+                            <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                <GradientStop Color="#FFD70027"/>
+                                <GradientStop Color="#FF030303" Offset="1"/>
+                                <GradientStop Color="#FF510311" Offset="1"/>
+                            </LinearGradientBrush>
+                        </TextBlock.Foreground>
+                    </TextBlock>
+                </Canvas>
+            </Border>
+
+        </Grid>
+
+
+
 
     </Grid>
 

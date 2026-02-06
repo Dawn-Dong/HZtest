@@ -31,7 +31,10 @@ namespace HZtest.Services
         {
             _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
         }
-
+        /// <summary>
+        /// 设置当前操作的设备 SNCode
+        /// </summary>
+        /// <param name="snCode"></param>
         public void SetCurrentSNCode(string snCode)
         {
             _currentSNCode = snCode;
@@ -957,6 +960,52 @@ namespace HZtest.Services
                 };
             }
         }
+        /// <summary>
+        /// 获取设备报警信息
+        /// </summary>
+        /// <returns></returns>
+        public async Task<BaseResponse<List<DeviceAlarmInforResponse>>> GetDeviceAlarmInforAsync()
+        {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<List<DeviceAlarmInforResponse>> { Status = "未设置设备 SNCode" };
+            }
+
+            try
+            {
+                var request = new BaseRequest
+                {
+                    Operation = "get_value",
+                    Items = new List<RequestItem>(),
+                };
+
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/WARNING",
+                });
+
+                var result = await _apiClient.PostAsync<BaseResponse<List<DeviceAlarmInforResponse>[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                var deviceAlarmInfor = result?.Value?[0]?[0] ?? new List<DeviceAlarmInforResponse>();
+                return new BaseResponse<List<DeviceAlarmInforResponse>>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = deviceAlarmInfor
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<List<DeviceAlarmInforResponse>>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
+
+
+
+
+
 
         #endregion
 

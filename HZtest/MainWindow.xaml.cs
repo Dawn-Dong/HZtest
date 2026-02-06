@@ -20,10 +20,21 @@ namespace HZtest
     /// </summary>
     public partial class MainWindow : Window
     {
-        public MainWindow()
+
+        private readonly MainWindowViewModel _mainWindowViewModel;
+
+        public MainWindow(MainWindowViewModel viewModel)
         {
             InitializeComponent();
+            // 使用 DI 注入的 ViewModel 作为 DataContext，避免在页面中 new 未定义的服务
+            DataContext = viewModel;
+            _mainWindowViewModel = viewModel;
 
+            // 页面卸载时停止监控
+            this.Unloaded += (s, e) =>
+            {
+                (this.DataContext as FileOperationsPageViewModel)?.Cleanup();
+            };
         }
 
         /// <summary>
@@ -42,11 +53,11 @@ namespace HZtest
             {
                 viewModel.Initialize();
             }
-
             if (StatusTextBlock != null)
             {
                 StatusTextBlock.Text = $"当前操作设备SN码:{SNCode}";
                 StatusTextBlock.Foreground = Brushes.Orange;
+                _mainWindowViewModel.Initialize();
             }
         }
 
@@ -65,6 +76,7 @@ namespace HZtest
             {
                 StatusTextBlock.Text = $"当前操作设备SN码:{SNCode}";
                 StatusTextBlock.Foreground = Brushes.Orange;
+                _mainWindowViewModel.Initialize();
             }
         }
 
@@ -86,7 +98,7 @@ namespace HZtest
             // 或者： MainFrame.Navigate(new FileOperationsPage());
         }
 
-        // 可选：主页按钮导航示例（如果需要）
+        // 主页按钮导航
         private void HomeButton_Click(object sender, RoutedEventArgs e)
         {
             // 如果你有 HomePage 的 DI 实例化逻辑，使用 NavigateToHomePage 或直接 new
@@ -98,6 +110,17 @@ namespace HZtest
             }
             MainFrame.Content = homePage;
 
+        }
+
+        private void AlarmInfoButton_Click(object sender, RoutedEventArgs e)
+        {
+            var alarmInfoPage = App.Services.GetService<AlarmInfoPage>();
+            if (alarmInfoPage.DataContext is AlarmInfoPageViewModel viewModel)
+            {
+
+               // viewModel.Initialize();
+            }
+            MainFrame.Content = alarmInfoPage;
         }
 
 

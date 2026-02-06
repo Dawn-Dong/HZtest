@@ -75,10 +75,14 @@ namespace HZtest
 
             // DialogService 延迟初始化（不在这里传RootGrid）
             services.AddSingleton<IDialogService, DialogService>();
+            // MainWindow 
+
 
             // ViewModels - 不传递SN码参数，通过属性设置  
             services.AddTransient<HomePageViewModel>();
             services.AddTransient<FileOperationsPageViewModel>();
+            services.AddTransient<MainWindowViewModel>();
+            services.AddTransient<AlarmInfoPageViewModel>();
             // ViewModels Dialogs的 
             services.AddTransient<UploadFileViewModel>();
             services.AddTransient<ModeSelectionViewModel>();
@@ -88,6 +92,7 @@ namespace HZtest
             services.AddTransient<DevConnection>();
             services.AddTransient<HomePage>();
             services.AddTransient<FileOperationsPage>();
+            services.AddTransient<AlarmInfoPage>();
 
             // VIews Dialogs的
             services.AddTransient<ModeSelectionDialog>();

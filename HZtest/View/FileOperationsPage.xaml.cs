@@ -42,13 +42,12 @@ namespace HZtest.View
         {
             Dispatcher.BeginInvoke(() => GcodeEditor.Text = text ?? string.Empty);
         }
-        // 选中事件直接在这里处理
+        // 树形结构选中事件直接在这里处理
         private void FileTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             // e.NewValue 就是选中的 FileNode 对象
             if (e.NewValue is FileNode node)
             {
-                // 这里一定能断点进来！
                 System.Diagnostics.Debug.WriteLine($"选中了：{node.Name}");
 
                 // 传给 ViewModel
