@@ -8,7 +8,7 @@
       xmlns:infra="clr-namespace:HZtest.Infrastructure_基础设施"
       xmlns:vm="clr-namespace:HZtest.ViewModels"
       xmlns:models="clr-namespace:HZtest.Models"
-      xmlns:converters ="clr-namespace:HZtest.Converters"
+      xmlns:converters ="clr-namespace:HZtest.Converters.View"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
       Title="FileOperationsPage">

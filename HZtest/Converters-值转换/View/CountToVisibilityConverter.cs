@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 
-namespace HZtest.Resources_资源
+namespace HZtest.Converters.View
 {
 
     public class CountToVisibilityConverter : IValueConverter
@@ -26,5 +26,8 @@ namespace HZtest.Resources_资源
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
             => throw new NotImplementedException();
     }
+
+
+
 }
 

@@ -34,6 +34,9 @@ namespace HZtest.ViewModels
             }
         }
         private bool _isLoading = false;
+        /// <summary>
+        /// 加载提示是否展示
+        /// </summary>
         public bool IsLoading
         {
             get => _isLoading;
@@ -57,6 +60,7 @@ namespace HZtest.ViewModels
                 {
                     IsLoading = true;
                     var alarmInfo = await _deviceService.GetDeviceAlarmInforAsync();
+                    await Task.Delay(1000);
                     AlarmInfoList = alarmInfo.Value;
                     IsLoading = false;
                     //AlarmInfoList = new List<DeviceAlarmInforResponse>();

@@ -2,7 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:HZtest"
-             xmlns:controls ="clr-namespace:HZtest.Resources_资源">
+             xmlns:controls ="clr-namespace:HZtest.Converters.View">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -11,7 +11,7 @@
                 <!-- 引入资源字典 -->
                 <ResourceDictionary Source="Resources-资源/Styles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            <controls:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
+            <controls:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -6,7 +6,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Data;
 
-namespace HZtest.Converters
+namespace HZtest.Converters.View
 {
     #region 数据的翻译官，把程序里的布尔值翻译成用户看得懂的图标。
 
