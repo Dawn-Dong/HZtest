@@ -118,12 +118,21 @@ namespace HZtest
             if (alarmInfoPage.DataContext is AlarmInfoPageViewModel viewModel)
             {
 
-               // viewModel.Initialize();
+                // viewModel.Initialize();
             }
             MainFrame.Content = alarmInfoPage;
         }
 
+        private void ToolInfoButton_Click(object sender, RoutedEventArgs e)
+        {
+            var toolInfoPage = App.Services.GetService<ToolInfoPage>();
+            if (toolInfoPage.DataContext is ToolInfoViewModel viewModel)
+            {
+                //viewModel.Initialize();
+            }
+            MainFrame.Content = toolInfoPage;
 
 
+        }
     }
 }

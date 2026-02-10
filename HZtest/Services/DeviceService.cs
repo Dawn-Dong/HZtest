@@ -1001,14 +1001,93 @@ namespace HZtest.Services
                 };
             }
         }
-
-
-
-
-
-
         #endregion
 
+        /// <summary>
+        /// 获取设备刀具信息
+        /// </summary>
+        /// <returns></returns>
+        public async Task<BaseResponse<ToolInfoResponse>> GetDeviceToolInforAsync(int toolNumber)
+        {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<ToolInfoResponse> { Status = "未设置设备 SNCode" };
+            }
+
+            try
+            {
+                var request = new BaseRequest
+                {
+                    Operation = "get_value",
+                    Items = new List<RequestItem>(),
+                };
+                //长度补偿值的索引计算方式，每个刀具占用200个索引，长度补偿在每个刀具的第6个索引位置（偏移5）
+                var lengthCompensationIndex = 70000 + ((toolNumber - 1) * 200) + 6;
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/VARIABLE@MACRO",
+                    Index = lengthCompensationIndex,
+                });
+                //半径补偿
+                var radiusCompensationIndex = 70000 + ((toolNumber - 1) * 200) + 11;
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/VARIABLE@MACRO",
+                    Index = radiusCompensationIndex,
+                });
+                //长度磨损
+                var lengtWearIndex = 70000 + ((toolNumber - 1) * 200) + 29;
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/VARIABLE@MACRO",
+                    Index = lengtWearIndex,
+                });
+                //半径磨损
+                var radiusWearIndex = 70000 + ((toolNumber - 1) * 200) + 34;
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/VARIABLE@MACRO",
+                    Index = radiusWearIndex,
+                });
+                //综合寿命
+                var comprehensiveLifespanIndex = 70000 + ((toolNumber - 1) * 200) + 79;
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/VARIABLE@MACRO",
+                    Index = comprehensiveLifespanIndex,
+                });
+
+
+                var result = await _apiClient.PostAsync<BaseResponse<double[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+
+                var deviceToolInforArry = result?.Value;
+
+                var toolInforResponse = new ToolInfoResponse()
+                {
+                    LengthCompensation = deviceToolInforArry != null && deviceToolInforArry.Length > 0 ? deviceToolInforArry[0]?[0] ?? 0 : 0,
+                    RadiusCompensation = deviceToolInforArry != null && deviceToolInforArry.Length > 1 ? deviceToolInforArry[1]?[0] ?? 0 : 0,
+                    LengthWear = deviceToolInforArry != null && deviceToolInforArry.Length > 2 ? deviceToolInforArry[2]?[0] ?? 0 : 0,
+                    RadiusWear = deviceToolInforArry != null && deviceToolInforArry.Length > 3 ? deviceToolInforArry[3]?[0] ?? 0 : 0,
+                    ComprehensiveLifespan = deviceToolInforArry != null && deviceToolInforArry.Length > 4 ? deviceToolInforArry[4]?[0] ?? 0 : 0,
+                };
+
+
+
+                return new BaseResponse<ToolInfoResponse>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = toolInforResponse
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<ToolInfoResponse>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
 
     }
 }
