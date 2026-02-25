@@ -29,6 +29,7 @@
         <Button Content="文件"  Grid.Column="0"  Grid.Row="1"  Click="FileButton_Click"/>
         <Button Content="报警信息"  Grid.Column="0"  Grid.Row="2"  Click="AlarmInfoButton_Click"/>
         <Button Content="刀具信息"  Grid.Column="0"  Grid.Row="3"  Click="ToolInfoButton_Click"/>
+        <Button Content="用户变量"  Grid.Column="0"  Grid.Row="4"  Click="UserVariablesButton_Click"/>
         <Frame Grid.Column="1"  Grid.RowSpan="6" x:Name="MainFrame" NavigationUIVisibility="Hidden"/>
 
         <!--增加左右结构 右边做错误信息的跑马灯提示 左边依旧提示当前运行设备-->

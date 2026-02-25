@@ -1088,6 +1088,99 @@ namespace HZtest.Services
                 };
             }
         }
+        /// <summary>
+        /// 获取用户变量值
+        /// </summary>
+        /// <param name="readAddress">要获取的变量地址</param>
+        /// <returns></returns>
+        public async Task<BaseResponse<double>> GetUserVariablesAsync(UserVariablesReadWriteRequest userVariables)
+        {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<double> { Status = "未设置设备 SNCode" };
+            }
+            try
+            {
+                if (userVariables.OperationAddressNumber < 700000 || userVariables.OperationAddressNumber > 719999)
+                {
+                    return new BaseResponse<double> { Status = "用户变量地址必须在700000-719999之间" };
+                }
+                var request = new BaseRequest
+                {
+                    Operation = "get_value",
+                    Items = new List<RequestItem>(),
+                };
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/PARAMETER",
+                    Index = userVariables.OperationAddressNumber,
+                });
+                var result = await _apiClient.GetAsync<BaseResponse<double[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                return new BaseResponse<double>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = result?.Value[0][0] ?? 0
+                };
+
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<double>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
+        /// <summary>
+        /// 写入用户变量值
+        /// </summary>
+        /// <param name="readAddress">要获取的变量地址</param>
+        /// <returns></returns>
+        public async Task<BaseResponse<bool>> SetUserVariablesAsync(UserVariablesReadWriteRequest userVariables)
+        {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<bool> { Status = "未设置设备 SNCode" };
+            }
+            try
+            {
+                if (userVariables.OperationAddressNumber < 700000 || userVariables.OperationAddressNumber > 719999)
+                {
+                    return new BaseResponse<bool> { Status = "用户变量地址必须在700000-719999之间" };
+                }
+                if (userVariables.WriteValue == null)
+                    return new BaseResponse<bool> { Status = "写入值为空" };
+
+                var request = new BaseRequest
+                {
+                    Operation = "set_value",
+                    Items = new List<RequestItem>(),
+                };
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/PARAMETER",
+                    Index = userVariables.OperationAddressNumber,
+                    Value = userVariables.WriteValue,
+                });
+                var result = await _apiClient.PostAsync<BaseResponse<bool[]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                return new BaseResponse<bool>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = result?.Value[0] ?? false
+                };
+
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<bool>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
+
 
     }
 }

@@ -134,5 +134,14 @@ namespace HZtest
 
 
         }
+        private void UserVariablesButton_Click(object sender, RoutedEventArgs e)
+        {
+            var userVariablesPage = App.Services.GetService<UserVariablesPage>();
+            if (userVariablesPage.DataContext is UserVariablesViewModel viewModel)
+            {
+                //viewModel.Initialize();
+            }
+            MainFrame.Content = userVariablesPage;
+        }
     }
 }

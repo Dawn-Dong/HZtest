@@ -169,5 +169,27 @@ namespace HZtest.Models
         [Description("运行状态")]
         Running = 3,
     }
+    /// <summary>
+    /// 用户变量操作类型
+    /// </summary>
+    public enum UserVariableOperationTypeEnum
+    {
+        /// <summary>
+        /// 错误类型
+        /// </summary>
+        [Description("未知类型错误")]
+        Error = -1,
+        /// <summary>
+        /// 读取操作
+        /// </summary>
+        [Description("读取操作")]
+        Read = 1,
+        /// <summary>
+        /// 写入操作
+        /// </summary>
+        [Description("写入操作")]
+        Write = 2,
+
+    }
 
 }
