@@ -1,4 +1,5 @@
 ﻿using HZtest.Interfaces_接口定义;
+using HZtest.Resources_资源.Control.ViewModel;
 using HZtest.View;
 using HZtest.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -142,6 +143,16 @@ namespace HZtest
                 //viewModel.Initialize();
             }
             MainFrame.Content = userVariablesPage;
+        }
+        private void RelativeCoordinateSystemButton_Click(object sender, RoutedEventArgs e)
+        {
+            var relativeCoordinateSystemPage = App.Services.GetService<RelativeCoordinateSystemPage>();
+            if (relativeCoordinateSystemPage.DataContext is RelativeCoordinateSystemViewModel viewModel)
+            {
+                //viewModel.Initialize();
+            }
+            MainFrame.Content = relativeCoordinateSystemPage;
+
         }
     }
 }

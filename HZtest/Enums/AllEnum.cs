@@ -192,4 +192,91 @@ namespace HZtest.Models
 
     }
 
+    /// <summary>
+    /// 坐标系枚举
+    /// </summary>
+    public enum CoordinateSystemEnum
+    {
+        /// <summary>
+        /// 未知错误坐标系
+        /// </summary>
+        [Description("未知错误坐标系")]
+        Error = -1,
+        /// <summary>
+        /// 外部偏置坐标系
+        /// </summary>
+        [Description("外部偏置坐标系")]
+        ExternalBias = 0,
+        /// <summary>
+        /// G54坐标系
+        /// </summary>
+        [Description("G54坐标系")]
+        G54 = 1,
+        /// <summary>
+        /// G54偏置坐标系
+        /// </summary>
+        [Description("G54偏置坐标系")]
+        G54Bias = 2,
+        /// <summary>
+        /// G55坐标系
+        /// </summary>
+        [Description("G55坐标系")]
+        G55 = 3,
+        /// <summary>
+        /// G55偏置坐标系
+        /// </summary>
+        [Description("G55偏置坐标系")]
+        G55Bias = 4,
+        /// <summary>
+        /// G56坐标系
+        /// </summary>
+        [Description("G56坐标系")]
+        G56 = 5,
+        /// <summary>
+        /// G56偏置坐标系
+        /// </summary>
+        [Description("G56偏置坐标系")]
+        G56Bias = 6,
+        /// <summary>
+        /// G57坐标系
+        /// </summary>
+        [Description("G57坐标系")]
+        G57 = 7,
+        /// <summary>
+        /// G57偏置坐标系
+        /// </summary>
+        [Description("G57偏置坐标系")]
+        G57Bias = 8,
+        /// <summary>
+        /// G58坐标系
+        /// </summary>
+        [Description("G58坐标系")]
+        G58 = 9,
+        /// <summary>
+        /// G58偏置坐标系
+        /// </summary>
+        [Description("G58偏置坐标系")]
+        G58Bias = 10,
+
+        /// <summary>
+        /// G59坐标系
+        /// </summary>
+        [Description("G59坐标系")]
+        G59 = 11,
+        /// <summary>
+        /// G59偏置坐标系
+        /// </summary>
+        [Description("G59偏置坐标系")]
+        G59Bias = 12,
+        /// <summary>
+        /// 相对坐标系
+        /// </summary>
+        [Description("相对坐标系")]
+        Relative = 13,
+
+    }
+
+
+
+
 }

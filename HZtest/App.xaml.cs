@@ -85,6 +85,7 @@ namespace HZtest
             services.AddTransient<AlarmInfoPageViewModel>();
             services.AddTransient<ToolInfoViewModel>();
             services.AddTransient<UserVariablesViewModel>();
+            services.AddTransient<RelativeCoordinateSystemViewMode>();
 
 
             // ViewModels Dialogs的 
@@ -99,6 +100,7 @@ namespace HZtest
             services.AddTransient<AlarmInfoPage>();
             services.AddTransient<ToolInfoPage>();
             services.AddTransient<UserVariablesPage>();
+            services.AddTransient<RelativeCoordinateSystemPage>();
 
             // VIews Dialogs的
             services.AddTransient<ModeSelectionDialog>();

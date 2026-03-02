@@ -1180,6 +1180,105 @@ namespace HZtest.Services
                 };
             }
         }
+        #region 相对坐标系接口
+
+
+        /// <summary>
+        /// 获取坐标系值
+        /// </summary>
+        /// <param name="">要获取的变量地址</param>
+        /// <returns></returns>
+        public async Task<BaseResponse<RelativeCoordinateSystemResponse>> GetCoordinateSystemAsync(int OperatingCoordinateSystemId)
+        {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<RelativeCoordinateSystemResponse> { Status = "未设置设备 SNCode" };
+            }
+            try
+            {
+
+                var request = new BaseRequest
+                {
+                    Operation = "get_value",
+                    Items = new List<RequestItem>(),
+                };
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/COORDINATE",
+                    Index = OperatingCoordinateSystemId,
+                });
+                var result = await _apiClient.GetAsync<BaseResponse<RelativeCoordinateSystemResponse[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                return new BaseResponse<RelativeCoordinateSystemResponse>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = result?.Value[0][0] ?? new RelativeCoordinateSystemResponse()
+                };
+
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<RelativeCoordinateSystemResponse>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
+
+
+        /// <summary>
+        /// 上传坐标系值
+        /// </summary>
+        /// <param name="">要获取的变量地址</param>
+        /// <returns></returns>
+        public async Task<BaseResponse<bool>> SetCoordinateSystemAsync(RelativeCoordinateSystemRequest coordinateSystemRequest)
+        {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<bool> { Status = "未设置设备 SNCode" };
+            }
+            try
+            {
+                var value = new
+                {
+                    x = coordinateSystemRequest.XAxisValue,
+                    y = coordinateSystemRequest.YAxisValue,
+                    z = coordinateSystemRequest.ZAxisValue,
+                    b = coordinateSystemRequest.BAxisValue,
+                    c = coordinateSystemRequest.CAxisValue
+                };
+
+                var request = new BaseRequest
+                {
+                    Operation = "set_value",
+                    Items = new List<RequestItem>(),
+                };
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/COORDINATE",
+                    Index = coordinateSystemRequest.OperatingCoordinateSystemId,
+                    Value = value
+                });
+
+                var result = await _apiClient.GetAsync<BaseResponse<bool[]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+
+                return new BaseResponse<bool>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = result?.Value[0] ?? false
+                };
+
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<bool>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
+        #endregion
 
 
     }
