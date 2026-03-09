@@ -32,6 +32,11 @@ namespace HZtest.Constants
         /// </summary>
         public const int CycleStart = 5;
 
+        /// <summary>
+        /// 复位标志偏移
+        /// </summary>
+        public const int Reset = 10;
+
 
     }
 

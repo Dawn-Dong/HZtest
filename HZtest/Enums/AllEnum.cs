@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HZtest.Infrastructure_基础设施;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -276,7 +277,80 @@ namespace HZtest.Models
 
     }
 
+    /// <summary>
+    /// 寄存器类型枚举
+    /// </summary>
+    public enum RegisterTypeEnum
+    {
 
+        /// <summary>
+        /// 未知寄存器
+        /// </summary>
+        [Description("未知寄存器")]
+        Error = -1,
 
+        /// <summary>
+        /// X寄存器
+        /// </summary>
+        [RegisterInfo(bitWidth: 8, maximumWritableAddress: 511)]
+        [Description("X寄存器")]
+        X = 1,
+
+        /// <summary>
+        /// Y寄存器
+        /// </summary>
+        [RegisterInfo(bitWidth: 8, maximumWritableAddress: 511)]
+        [Description("Y寄存器")]
+        Y = 2,
+
+        /// <summary>
+        /// R寄存器
+        /// </summary>
+        [RegisterInfo(bitWidth: 8, maximumWritableAddress: 2047)]
+        [Description("R寄存器")]
+        R = 3,
+
+        /// <summary>
+        /// G寄存器
+        /// </summary>
+        [RegisterInfo(bitWidth: 16, maximumWritableAddress: 3727)]
+        [Description("G寄存器")]
+        G = 4,
+
+        /// <summary>
+        /// B寄存器
+        /// </summary>
+        [RegisterInfo(bitWidth: 16, maximumWritableAddress: 1721)]
+        [Description("B寄存器")]
+        B = 5,
+
+        /// <summary>
+        /// I寄存器
+        /// </summary>
+        [RegisterInfo(bitWidth: 8, maximumWritableAddress: 127)]
+        [Description("I寄存器")]
+        I = 6,
+
+        /// <summary>
+        /// Q寄存器
+        /// </summary>
+        [RegisterInfo(bitWidth: 8, maximumWritableAddress: 127)]
+        [Description("Q寄存器")]
+        Q = 7,
+
+        /// <summary>
+        /// W寄存器
+        /// </summary>
+        [RegisterInfo(bitWidth: 16, maximumWritableAddress: 255)]
+        [Description("W寄存器")]
+        W = 8,
+
+        /// <summary>
+        /// D寄存器
+        /// </summary>
+        [RegisterInfo(bitWidth: 16, maximumWritableAddress: 255)]
+        [Description("D寄存器")]
+        D = 9,
+    }
 
 }

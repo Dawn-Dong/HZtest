@@ -6,6 +6,7 @@ using HZtest.Services; // 必需
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Net.NetworkInformation;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows.Input;
@@ -53,7 +54,7 @@ namespace HZtest.ViewModels
         // ✅ 命令（业务逻辑）
         public ICommand StartCommand { get; }
         public ICommand PauseCommand { get; }
-
+        public ICommand ResetCommand { get; }
 
         public ICommand OpenModeSelectionCommand { get; }
 
@@ -77,6 +78,7 @@ namespace HZtest.ViewModels
             _deviceService = deviceService ?? throw new ArgumentNullException(nameof(deviceService));
             StartCommand = new RelayCommand(async () => await ExecuteStartAsync());
             PauseCommand = new RelayCommand(async () => await ExecutePauseAsync());
+            ResetCommand = new RelayCommand(async () => await ExecuteResetAsync());
             OpenModeSelectionCommand = new AsyncRelayCommand(OpenModeSelection, () => !IsBusy);
             //StartDataMonitoring();
         }
@@ -337,6 +339,15 @@ namespace HZtest.ViewModels
 
             };
             var startState = await _deviceService.SetStartPauseStateAsync(startStopStateDto);
+            if (startState.Value)
+            {
+                _message_service.ShowMessage($"设置成功");
+            }
+            else
+            {
+                _message_service.ShowError($"设置失败：{startState.Status}");
+            }
+
             //暂不进行消息提示  方案参考 消息服务
         }
         /// <summary>
@@ -352,11 +363,45 @@ namespace HZtest.ViewModels
 
             };
             var stopState = await _deviceService.SetStartPauseStateAsync(startStopStateDto);
+            if (stopState.Value)
+            {
+                _message_service.ShowMessage($"设置成功");
+            }
+            else
+            {
+                _message_service.ShowError($"设置失败：{stopState.Status}");
+            }
             //暂不进行消息提示  方案参考 消息服务
 
         }
+        /// <summary>
+        /// 设置复位信号为 true
+        /// </summary>
+        /// <returns></returns>
+
+        private async Task ExecuteResetAsync()
+        {
+
+            var resetState = await _deviceService.SetResetTriggerAsync();
+            if (resetState.Value)
+            {
+                _message_service.ShowMessage($"复位成功");
+            }
+            else
+            {
+                _message_service.ShowError($"设置失败：{resetState.Status}");
+            }
+            //暂不进行消息提示  方案参考 消息服务
+        }
 
 
+
+
+
+        /// <summary>
+        /// 打开切换模式对话框，获取用户选择的模式值，并调用接口设置新模式
+        /// </summary>
+        /// <returns></returns>
         private async Task OpenModeSelection()
         {
 
@@ -367,6 +412,11 @@ namespace HZtest.ViewModels
                 // 参数2: 传入当前模式值（可选）
                 var result = await _dialogService.ShowDialogAsync<int?>("ModeSelection", CurrentModeValue);
 
+                if (result == CurrentModeValue)
+                {
+                    _message_service.ShowMessage($"模式未变化");
+                    return;
+                }
                 // 处理结果
                 if (result.HasValue)
                 {
@@ -455,6 +505,7 @@ namespace HZtest.ViewModels
         {
             var operationMode = await _deviceService.GetOperationModeAsync();
             OperationMode = operationMode.Value.GetDescription();
+            CurrentModeValue = operationMode.Value.GetHashCode();
         }
         /// <summary>
         /// 获取设备状态

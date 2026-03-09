@@ -269,7 +269,7 @@ namespace HZtest.ViewModels
         /// </summary>
         public void Initialize()
         {
-            GetDirectoryFileList();
+            GetDirectoryFileList(true);
             // 启动监控（确保 SNCode 已设置）
             StartDataMonitoring();
         }
@@ -313,48 +313,123 @@ namespace HZtest.ViewModels
         }
 
         #region 树节点实现方法
+
         /// <summary>
         /// 获取目录文件列表并构建树节点
         /// </summary>
         /// <returns></returns>
         public async void GetDirectoryFileList()
         {
-            var response = await _deviceService.GetDirectoryFileWithDetailsListAsync();
-            if (response?.Value?.FileDetailsList is not List<FileDetails> fileList) return;
-
-            TreeItems.Clear();
-            var cache = new Dictionary<string, FileNode>(StringComparer.OrdinalIgnoreCase);
-
-            // 第一阶段：创建所有节点（按路径深度排序，确保父级在前）
-            foreach (var fileDetail in fileList.OrderBy(f => f.Name.Count(c => c == '/')))
+            try
             {
-                CreateNode(fileDetail, cache);
-            }
-
-            // 第二阶段：建立父子关系
-            foreach (var node in cache.Values)
-            {
-                var parentPath = GetParentPath(node.FullPath);
-
-                if (string.IsNullOrEmpty(parentPath))
+                var response = await _deviceService.GetDirectoryFileWithDetailsListAsync();
+                if (response.Code != 0)
                 {
-                    // 根级节点
-                    TreeItems.Add(node);
+                    _message_service.ShowError("查询文件列表失败");
+                    return;
                 }
-                else if (cache.TryGetValue(parentPath, out var parent))
-                {
-                    // 挂到父节点下
-                    node.Parent = parent;
-                    parent.Children.Add(node);
+                if (response?.Value?.FileDetailsList is not List<FileDetails> fileList) return;
 
-                    // 确保父节点是目录类型（有子项必定是目录）
-                    if (parent.Type != FileTypeEnum.Directory)
+                TreeItems.Clear();
+                var cache = new Dictionary<string, FileNode>(StringComparer.OrdinalIgnoreCase);
+
+                // 第一阶段：创建所有节点（按路径深度排序，确保父级在前）
+                foreach (var fileDetail in fileList.OrderBy(f => f.Name.Count(c => c == '/')))
+                {
+                    CreateNode(fileDetail, cache);
+                }
+
+                // 第二阶段：建立父子关系
+                foreach (var node in cache.Values)
+                {
+                    var parentPath = GetParentPath(node.FullPath);
+
+                    if (string.IsNullOrEmpty(parentPath))
                     {
-                        parent.Type = FileTypeEnum.Directory;
-                        OnPropertyChanged(nameof(parent.IsDirectory));
-                        OnPropertyChanged(nameof(parent.DisplaySize));
+                        // 根级节点
+                        TreeItems.Add(node);
+                    }
+                    else if (cache.TryGetValue(parentPath, out var parent))
+                    {
+                        // 挂到父节点下
+                        node.Parent = parent;
+                        parent.Children.Add(node);
+
+                        // 确保父节点是目录类型（有子项必定是目录）
+                        if (parent.Type != FileTypeEnum.Directory)
+                        {
+                            parent.Type = FileTypeEnum.Directory;
+                            OnPropertyChanged(nameof(parent.IsDirectory));
+                            OnPropertyChanged(nameof(parent.DisplaySize));
+                        }
                     }
                 }
+                _message_service.ShowMessage("查询文件列表成功");
+                return;
+
+            }
+            catch (Exception ex)
+            {
+                _message_service.ShowError($"查询文件列表程序错误：{ex.Message}");
+                return;
+            }
+        }
+        /// <summary>
+        /// 初次打开获取目录文件列表并构建树节点
+        /// </summary>
+        /// <param name="firstTime">是否初次</param>
+
+        public async void GetDirectoryFileList(bool firstTime)
+        {
+            try
+            {
+                var response = await _deviceService.GetDirectoryFileWithDetailsListAsync();
+                if (response.Code != 0)
+                {
+                    _message_service.ShowError("查询文件列表失败");
+                    return;
+                }
+                if (response?.Value?.FileDetailsList is not List<FileDetails> fileList) return;
+
+                TreeItems.Clear();
+                var cache = new Dictionary<string, FileNode>(StringComparer.OrdinalIgnoreCase);
+
+                // 第一阶段：创建所有节点（按路径深度排序，确保父级在前）
+                foreach (var fileDetail in fileList.OrderBy(f => f.Name.Count(c => c == '/')))
+                {
+                    CreateNode(fileDetail, cache);
+                }
+
+                // 第二阶段：建立父子关系
+                foreach (var node in cache.Values)
+                {
+                    var parentPath = GetParentPath(node.FullPath);
+
+                    if (string.IsNullOrEmpty(parentPath))
+                    {
+                        // 根级节点
+                        TreeItems.Add(node);
+                    }
+                    else if (cache.TryGetValue(parentPath, out var parent))
+                    {
+                        // 挂到父节点下
+                        node.Parent = parent;
+                        parent.Children.Add(node);
+
+                        // 确保父节点是目录类型（有子项必定是目录）
+                        if (parent.Type != FileTypeEnum.Directory)
+                        {
+                            parent.Type = FileTypeEnum.Directory;
+                            OnPropertyChanged(nameof(parent.IsDirectory));
+                            OnPropertyChanged(nameof(parent.DisplaySize));
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _message_service.ShowError($"查询文件列表程序错误：{ex.Message}");
+                return;
             }
         }
 
@@ -419,11 +494,17 @@ namespace HZtest.ViewModels
                         return ok ? "" : null;
                     }
 
-                    // 情况2：选中了文件 → 其父目录
-                    if (!SelectedNode.IsDirectory)
+                    // 情况2：选中了文件并不在根目录 → 其父目录
+                    if (SelectedNode.Children.Count() != 0 && !SelectedNode.IsDirectory)
                     {
                         var ok = await _dialogService.ShowConfirmAsync("选择文件默认放到该文件父目录，是否继续？", "继续");
                         return ok ? GetBeforeLast(SelectedNode.FullPath, '/') : null;
+                    }
+
+                    if (!SelectedNode.IsDirectory)
+                    {
+                        var ok = await _dialogService.ShowConfirmAsync("选择根目录文件默认放到根目录中，是否继续？", "继续");
+                        return ok ? string.Empty : null;
                     }
 
                     // 情况3：选中了文件夹 → 直接使用
@@ -454,6 +535,7 @@ namespace HZtest.ViewModels
                 }
                 if (string.IsNullOrEmpty(FileUploadRequest.FileName))
                     _message_service.ShowError("文件名称不能命名为空");
+
                 FileUploadRequest.LocatedPath = path;
 
                 //请求接口实际执行上传到数控系统操作
@@ -462,6 +544,10 @@ namespace HZtest.ViewModels
                 {
                     _message_service.ShowError($"上传异常: {response.Status}");
 
+                }
+                else
+                {
+                    _message_service.ShowMessage("上传成功！");
                 }
 
             }

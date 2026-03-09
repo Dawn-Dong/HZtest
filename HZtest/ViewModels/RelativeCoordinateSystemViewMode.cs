@@ -69,6 +69,9 @@ namespace HZtest.ViewModels
             // 初始化枚举选项（自动获取Description）
             foreach (var value in Enum.GetValues(typeof(CoordinateSystemEnum)))
             {
+                if ((CoordinateSystemEnum)value == CoordinateSystemEnum.Error)
+                    break;
+
                 var description = UniversalValueConversion.GetDescription((CoordinateSystemEnum)value);
                 CoordinateSystemOptions.Add(new EnumDescriptionRelativeCoordinateSystem
                 {
@@ -91,6 +94,9 @@ namespace HZtest.ViewModels
                     return;
                 }
                 var coordinateSystem = await _deviceService.GetCoordinateSystemAsync(SelectedCoordinateSystem);
+                string message = coordinateSystem.Code == 0 ? "查询成功" : "查询失败";
+                _message_service.ShowMessage(message);
+
                 var coordinateSystemAxis = coordinateSystem.Value;
                 CoordinateSystemData.XAxisCoordinateSystemValue = coordinateSystemAxis.X;
                 CoordinateSystemData.YAxisCoordinateSystemValue = coordinateSystemAxis.Y;
@@ -134,7 +140,7 @@ namespace HZtest.ViewModels
                 }
                 else
                 {
-                    _message_service.ShowError($"上传失败:{result.Status}");
+                    _message_service.ShowError($"上传失败");
                 }
             }
             catch (Exception ex)

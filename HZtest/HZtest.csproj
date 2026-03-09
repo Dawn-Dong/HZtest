@@ -45,6 +45,9 @@
     <Compile Update="View\RelativeCoordinateSystemPage.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="View\RegisterOperationPage.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
 
 </Project>

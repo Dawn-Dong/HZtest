@@ -23,6 +23,10 @@ namespace HZtest
     {
 
         private readonly MainWindowViewModel _mainWindowViewModel;
+        /// <summary>
+        /// 操作的设备SN码
+        /// </summary>
+        public string OperatingEQPSNCode = string.Empty;
 
         public MainWindow(MainWindowViewModel viewModel)
         {
@@ -77,6 +81,7 @@ namespace HZtest
             {
                 StatusTextBlock.Text = $"当前操作设备SN码:{SNCode}";
                 StatusTextBlock.Foreground = Brushes.Orange;
+                OperatingEQPSNCode = SNCode ?? string.Empty;
                 _mainWindowViewModel.Initialize();
             }
         }
@@ -85,6 +90,12 @@ namespace HZtest
         // 点击 “文件” 按钮时在右侧 Frame 显示 FileOperationsPage
         private void FileButton_Click(object sender, RoutedEventArgs e)
         {
+            if (string.IsNullOrEmpty(OperatingEQPSNCode))
+            {
+                MessageBox.Show("请先确保设备链接成功在操作！", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             // 直接 new 页面并显示；如果你通过 DI 管理页面，可以改为从 App.Services 获取实例
             var fileOperationsPage = App.Services.GetService<FileOperationsPage>();
             if (fileOperationsPage.DataContext is FileOperationsPageViewModel viewModel)
@@ -102,6 +113,11 @@ namespace HZtest
         // 主页按钮导航
         private void HomeButton_Click(object sender, RoutedEventArgs e)
         {
+            if (string.IsNullOrEmpty(OperatingEQPSNCode))
+            {
+                MessageBox.Show("请先确保设备链接成功在操作！", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
             // 如果你有 HomePage 的 DI 实例化逻辑，使用 NavigateToHomePage 或直接 new
             var homePage = App.Services.GetService<HomePage>();
             // 如果 HomePage 的 DataContext 是 HomePageViewModel 类型，则进行 SN 码的设置与初始化
@@ -112,9 +128,18 @@ namespace HZtest
             MainFrame.Content = homePage;
 
         }
-
+        /// <summary>
+        /// 点击 “报警信息” 按钮时在右侧 Frame 显示 AlarmInfoPage
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void AlarmInfoButton_Click(object sender, RoutedEventArgs e)
         {
+            if (string.IsNullOrEmpty(OperatingEQPSNCode))
+            {
+                MessageBox.Show("请先确保设备链接成功在操作！", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
             var alarmInfoPage = App.Services.GetService<AlarmInfoPage>();
             if (alarmInfoPage.DataContext is AlarmInfoPageViewModel viewModel)
             {
@@ -123,9 +148,19 @@ namespace HZtest
             }
             MainFrame.Content = alarmInfoPage;
         }
+        /// <summary>
+        /// 点击 “工具信息” 按钮时在右侧 Frame 显示 ToolInfoPage
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
 
         private void ToolInfoButton_Click(object sender, RoutedEventArgs e)
         {
+            if (string.IsNullOrEmpty(OperatingEQPSNCode))
+            {
+                MessageBox.Show("请先确保设备链接成功在操作！", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
             var toolInfoPage = App.Services.GetService<ToolInfoPage>();
             if (toolInfoPage.DataContext is ToolInfoViewModel viewModel)
             {
@@ -135,8 +170,18 @@ namespace HZtest
 
 
         }
+        /// <summary>
+        ///  点击 “用户变量” 按钮时在右侧 Frame 显示 UserVariablesPage
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void UserVariablesButton_Click(object sender, RoutedEventArgs e)
         {
+            if (string.IsNullOrEmpty(OperatingEQPSNCode))
+            {
+                MessageBox.Show("请先确保设备链接成功在操作！", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
             var userVariablesPage = App.Services.GetService<UserVariablesPage>();
             if (userVariablesPage.DataContext is UserVariablesViewModel viewModel)
             {
@@ -144,8 +189,18 @@ namespace HZtest
             }
             MainFrame.Content = userVariablesPage;
         }
+        /// <summary>
+        ///  点击 “相对坐标系” 按钮时在右侧 Frame 显示 RelativeCoordinateSystemPage
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void RelativeCoordinateSystemButton_Click(object sender, RoutedEventArgs e)
         {
+            if (string.IsNullOrEmpty(OperatingEQPSNCode))
+            {
+                MessageBox.Show("请先确保设备链接成功在操作！", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
             var relativeCoordinateSystemPage = App.Services.GetService<RelativeCoordinateSystemPage>();
             if (relativeCoordinateSystemPage.DataContext is RelativeCoordinateSystemViewModel viewModel)
             {
@@ -154,5 +209,25 @@ namespace HZtest
             MainFrame.Content = relativeCoordinateSystemPage;
 
         }
+        /// <summary>
+        ///  点击 “绝对坐标系” 按钮时在右侧 Frame 显示 AbsoluteCoordinateSystemPage
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void RegisterOperationButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(OperatingEQPSNCode))
+            {
+                MessageBox.Show("请先确保设备链接成功在操作！", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            var RegisterOperaionPage = App.Services.GetService<RegisterOperationPage>();
+            if (RegisterOperaionPage.DataContext is RegisterOperationViewModel viewModel)
+            {
+                //viewModel.Initialize();
+            }
+            MainFrame.Content = RegisterOperaionPage;
+        }
+
     }
 }

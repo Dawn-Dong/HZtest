@@ -335,6 +335,54 @@ namespace HZtest.Services
         }
 
         /// <summary>
+        /// 复位信号设置触发
+        /// </summary>
+        public async Task<BaseResponse<bool>> SetResetTriggerAsync()
+        {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<bool> { Status = "未设置设备 SNCode" };
+            }
+
+            try
+            {
+                var request = new BaseRequest
+                {
+                    Operation = "set_value",
+                    Items = new List<RequestItem>(),
+                };
+
+
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/VARIABLE@REG_G",
+                    Index = RegisterConstants.RuOrStartPause,
+                    Offset = RegisterOffsetConstants.Reset,
+                    Value = 1
+                });
+
+                var result = await _apiClient.PostAsync<BaseResponse<bool[]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                bool? firstValue = result?.Value?.FirstOrDefault();
+
+                return new BaseResponse<bool>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = firstValue ?? default(bool),
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<bool>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
+
+
+
+        /// <summary>
         /// 获取主轴实际转速（实例方法）
         /// </summary>
         public async Task<BaseResponse<int>> GetActualSpindleSpeedAsync()
@@ -1007,7 +1055,7 @@ namespace HZtest.Services
         /// 获取设备刀具信息
         /// </summary>
         /// <returns></returns>
-        public async Task<BaseResponse<ToolInfoResponse>> GetDeviceToolInforAsync(int toolNumber)
+        public async Task<BaseResponse<ToolInfoResponse>> GetDeviceToolInfoAsync(int toolNumber)
         {
             if (string.IsNullOrEmpty(CurrentSNCode))
             {
@@ -1064,6 +1112,7 @@ namespace HZtest.Services
 
                 var toolInforResponse = new ToolInfoResponse()
                 {
+                    ToolNumber = toolNumber,
                     LengthCompensation = deviceToolInforArry != null && deviceToolInforArry.Length > 0 ? deviceToolInforArry[0]?[0] ?? 0 : 0,
                     RadiusCompensation = deviceToolInforArry != null && deviceToolInforArry.Length > 1 ? deviceToolInforArry[1]?[0] ?? 0 : 0,
                     LengthWear = deviceToolInforArry != null && deviceToolInforArry.Length > 2 ? deviceToolInforArry[2]?[0] ?? 0 : 0,
@@ -1088,6 +1137,468 @@ namespace HZtest.Services
                 };
             }
         }
+
+        ///// <summary>
+        ///// 获取设备刀具列表信息
+        ///// </summary>
+        ///// <returns></returns>
+        //public async Task<BaseResponse<List<ToolInfoResponse>>> GetDeviceToolInfoListAsync(string scope)
+        //{
+        //    if (string.IsNullOrEmpty(CurrentSNCode))
+        //    {
+        //        return new BaseResponse<List<ToolInfoResponse>> { Status = "未设置设备 SNCode" };
+        //    }
+
+        //    try
+        //    {
+        //        // 1. 验证并解析范围
+        //        if (!ValidateScopeFormat(scope, out int minToolNumber, out int maxToolNumber))
+        //        {
+        //            return new BaseResponse<List<ToolInfoResponse>>
+        //            {
+        //                Status = $"无效的刀具范围格式: {scope}. 格式应为 'min-max' (例如: 1-10)"
+        //            };
+        //        }
+
+        //        // 2. 验证范围有效性
+        //        if (minToolNumber <= 0 || maxToolNumber < minToolNumber)
+        //        {
+        //            return new BaseResponse<List<ToolInfoResponse>>
+        //            {
+        //                Status = $"刀具范围无效: {minToolNumber}-{maxToolNumber}. 范围应为正整数且 min <= max"
+        //            };
+        //        }
+
+        //        var request = new BaseRequest
+        //        {
+        //            Operation = "get_value",
+        //            Items = new List<RequestItem>(),
+        //        };
+
+        //        for (int i = minToolNumber; i <= maxToolNumber; i++)
+        //        {
+
+        //        }
+
+        //        //长度补偿值的索引计算方式，每个刀具占用200个索引，长度补偿在每个刀具的第6个索引位置（偏移5）
+        //        var lengthCompensationIndex = 70000 + ((toolNumber - 1) * 200) + 6;
+        //        request.Items.Add(new RequestItem
+        //        {
+        //            Path = "/MACHINE/CONTROLLER/VARIABLE@MACRO",
+        //            Index = lengthCompensationIndex,
+        //        });
+        //        //半径补偿
+        //        var radiusCompensationIndex = 70000 + ((toolNumber - 1) * 200) + 11;
+        //        request.Items.Add(new RequestItem
+        //        {
+        //            Path = "/MACHINE/CONTROLLER/VARIABLE@MACRO",
+        //            Index = radiusCompensationIndex,
+        //        });
+        //        //长度磨损
+        //        var lengtWearIndex = 70000 + ((toolNumber - 1) * 200) + 29;
+        //        request.Items.Add(new RequestItem
+        //        {
+        //            Path = "/MACHINE/CONTROLLER/VARIABLE@MACRO",
+        //            Index = lengtWearIndex,
+        //        });
+        //        //半径磨损
+        //        var radiusWearIndex = 70000 + ((toolNumber - 1) * 200) + 34;
+        //        request.Items.Add(new RequestItem
+        //        {
+        //            Path = "/MACHINE/CONTROLLER/VARIABLE@MACRO",
+        //            Index = radiusWearIndex,
+        //        });
+        //        //综合寿命
+        //        var comprehensiveLifespanIndex = 70000 + ((toolNumber - 1) * 200) + 79;
+        //        request.Items.Add(new RequestItem
+        //        {
+        //            Path = "/MACHINE/CONTROLLER/VARIABLE@MACRO",
+        //            Index = comprehensiveLifespanIndex,
+        //        });
+
+
+        //        var result = await _apiClient.PostAsync<BaseResponse<double[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+
+        //        var deviceToolInforArry = result?.Value;
+
+        //        var toolInforResponse = new ToolInfoResponse()
+        //        {
+        //            LengthCompensation = deviceToolInforArry != null && deviceToolInforArry.Length > 0 ? deviceToolInforArry[0]?[0] ?? 0 : 0,
+        //            RadiusCompensation = deviceToolInforArry != null && deviceToolInforArry.Length > 1 ? deviceToolInforArry[1]?[0] ?? 0 : 0,
+        //            LengthWear = deviceToolInforArry != null && deviceToolInforArry.Length > 2 ? deviceToolInforArry[2]?[0] ?? 0 : 0,
+        //            RadiusWear = deviceToolInforArry != null && deviceToolInforArry.Length > 3 ? deviceToolInforArry[3]?[0] ?? 0 : 0,
+        //            ComprehensiveLifespan = deviceToolInforArry != null && deviceToolInforArry.Length > 4 ? deviceToolInforArry[4]?[0] ?? 0 : 0,
+        //        };
+
+
+
+        //        return new BaseResponse<ToolInfoResponse>
+        //        {
+        //            Code = result?.Code ?? -1,
+        //            Status = result?.Status ?? "未知错误",
+        //            Value = toolInforResponse
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return new BaseResponse<ToolInfoResponse>
+        //        {
+        //            Status = $"错误: {ex.Message}",
+        //        };
+        //    }
+        //}
+        #region 批量获取刀具信息
+        ///// <summary>
+        ///// 批量获取设备刀具列表信息（支持范围查询）
+        ///// </summary>
+        ///// <param name="scope">刀具范围，格式：min-max（例如：1-10）</param>
+        ///// <returns>包含刀具列表的响应</returns>
+        //public async Task<BaseResponse<List<ToolInfoResponse>>> GetDeviceToolInfoListAsync(string scope)
+        //{
+        //    if (string.IsNullOrEmpty(CurrentSNCode))
+        //    {
+        //        return new BaseResponse<List<ToolInfoResponse>> { Status = "未设置设备 SNCode" };
+        //    }
+
+        //    try
+        //    {
+        //        scope = "1-10";
+        //        // 1. 验证并解析范围
+        //        if (!ValidateScopeFormat(scope, out int minToolNumber, out int maxToolNumber))
+        //        {
+        //            return new BaseResponse<List<ToolInfoResponse>>
+        //            {
+        //                Status = $"无效的刀具范围格式: {scope}. 格式应为 'min-max' (例如: 1-10)"
+        //            };
+        //        }
+
+        //        // 2. 验证范围有效性
+        //        if (minToolNumber <= 0 || maxToolNumber < minToolNumber)
+        //        {
+        //            return new BaseResponse<List<ToolInfoResponse>>
+        //            {
+        //                Status = $"刀具范围无效: {minToolNumber}-{maxToolNumber}. 范围应为正整数且 min <= max"
+        //            };
+        //        }
+
+        //        // 3. 构建批量请求（一次性获取所有刀具数据）
+        //        var request = BuildBulkToolRequest(minToolNumber, maxToolNumber);
+
+        //        // 4. 发送批量请求
+        //        var result = await _apiClient.PostAsync<BaseResponse<double[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+
+        //        // 5. 解析结果并构建刀具列表
+        //        var toolList = ParseToolResponse(result, minToolNumber, maxToolNumber);
+
+        //        // 6. 返回结果
+        //        return new BaseResponse<List<ToolInfoResponse>>
+        //        {
+        //            Code = result?.Code ?? -1,
+        //            Status = result?.Status ?? "成功",
+        //            Value = toolList
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return new BaseResponse<List<ToolInfoResponse>>
+        //        {
+        //            Status = $"获取刀具数据失败: {ex.Message}"
+        //        };
+        //    }
+        //}
+
+        ///// <summary>
+        ///// 验证并解析刀具范围
+        ///// </summary>
+        //private bool ValidateScopeFormat(string scope, out int min, out int max)
+        //{
+        //    min = 0;
+        //    max = 0;
+
+        //    if (string.IsNullOrWhiteSpace(scope))
+        //        return false;
+
+        //    string[] parts = scope.Split(new[] { '-' }, 2);
+        //    if (parts.Length != 2)
+        //        return false;
+
+        //    if (!int.TryParse(parts[0], out min) || !int.TryParse(parts[1], out max))
+        //        return false;
+
+        //    return true;
+        //}
+
+        ///// <summary>
+        ///// 构建批量请求（为所有刀具预计算索引）
+        ///// </summary>
+        //private BaseRequest BuildBulkToolRequest(int minToolNumber, int maxToolNumber)
+        //{
+        //    var request = new BaseRequest
+        //    {
+        //        Operation = "get_value",
+        //        Items = new List<RequestItem>()
+        //    };
+
+        //    // 为每个刀具计算5个索引（长度补偿、半径补偿、长度磨损、半径磨损、综合寿命）
+        //    for (int toolNumber = minToolNumber; toolNumber <= maxToolNumber; toolNumber++)
+        //    {
+        //        // 长度补偿
+        //        AddIndex(request, toolNumber, 6);
+        //        // 半径补偿
+        //        AddIndex(request, toolNumber, 11);
+        //        // 长度磨损
+        //        AddIndex(request, toolNumber, 29);
+        //        // 半径磨损
+        //        AddIndex(request, toolNumber, 34);
+        //        // 综合寿命
+        //        AddIndex(request, toolNumber, 79);
+        //    }
+
+        //    return request;
+        //}
+
+        ///// <summary>
+        ///// 添加索引到请求
+        ///// </summary>
+        //private void AddIndex(BaseRequest request, int toolNumber, int offset)
+        //{
+        //    int index = 70000 + ((toolNumber - 1) * 200) + offset;
+        //    request.Items.Add(new RequestItem
+        //    {
+        //        Path = "/MACHINE/CONTROLLER/VARIABLE@MACRO",
+        //        Index = index
+        //    });
+        //}
+
+        ///// <summary>
+        ///// 解析批量响应（将返回的二维数组转换为刀具列表）
+        ///// </summary>
+        //private List<ToolInfoResponse> ParseToolResponse(
+        //    BaseResponse<double[][]> result,
+        //    int minToolNumber,
+        //    int maxToolNumber)
+        //{
+        //    var toolList = new List<ToolInfoResponse>();
+        //    int totalTools = maxToolNumber - minToolNumber + 1;
+
+        //    if (result?.Value == null || result.Value.Length != totalTools * 5)
+        //    {
+        //        // 处理异常情况：返回空列表或部分数据
+        //        return Enumerable.Range(minToolNumber, totalTools)
+        //                         .Select(_ => new ToolInfoResponse())
+        //                         .ToList();
+        //    }
+
+        //    // 按刀具分组处理（每5个值对应一个刀具）
+        //    for (int i = 0; i < totalTools; i++)
+        //    {
+        //        var toolResponse = new ToolInfoResponse
+        //        {
+        //            ToolNumber = i + 1,
+        //            LengthCompensation = result.Value[i * 5]?[0] == null ? 0 : result.Value[i * 5][0],
+        //            RadiusCompensation = result.Value[i * 5 + 1]?[0] ?? 0.0,
+        //            LengthWear = result.Value[i * 5 + 2]?[0] ?? 0,
+        //            RadiusWear = result.Value[i * 5 + 3]?[0] ?? 0,
+        //            ComprehensiveLifespan = result.Value[i * 5 + 4]?[0] ?? 0
+        //        };
+
+        //        toolList.Add(toolResponse);
+        //    }
+
+        //    return toolList;
+        //}
+
+
+
+
+
+        /// <summary>
+        /// 批量获取设备刀具列表信息（支持范围查询，自动分批次）
+        /// </summary>
+        /// <param name="scope">刀具范围，格式：min-max（例如：1-100）</param>
+        /// <returns>包含刀具列表的响应</returns>
+        public async Task<BaseResponse<List<ToolInfoResponse>>> GetDeviceToolInfoListAsync(string scope)
+        {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<List<ToolInfoResponse>> { Status = "未设置设备 SNCode" };
+            }
+
+            try
+            {
+                // 1. 验证并解析范围
+                if (!ValidateScopeFormat(scope, out int minToolNumber, out int maxToolNumber))
+                {
+                    return new BaseResponse<List<ToolInfoResponse>>
+                    {
+                        Status = $"无效的刀具范围格式: {scope}. 格式应为 'min-max' (例如: 1-10)"
+                    };
+                }
+
+                // 2. 验证范围有效性
+                if (minToolNumber <= 0 || maxToolNumber < minToolNumber)
+                {
+                    return new BaseResponse<List<ToolInfoResponse>>
+                    {
+                        Status = $"刀具范围无效: {minToolNumber}-{maxToolNumber}. 范围应为正整数且 min <= max"
+                    };
+                }
+
+                // 3. 分批次处理（每批10条）
+                int batchSize = 10; // 每批10条刀具
+                int totalTools = maxToolNumber - minToolNumber + 1;
+                int batchCount = (int)Math.Ceiling((double)totalTools / batchSize);
+
+                var allToolList = new List<ToolInfoResponse>();
+                var failedBatches = new List<int>();
+
+                for (int batchIndex = 0; batchIndex < batchCount; batchIndex++)
+                {
+                    // 计算当前批次的刀具范围
+                    int currentMin = minToolNumber + batchIndex * batchSize;
+                    int currentMax = Math.Min(currentMin + batchSize - 1, maxToolNumber);
+
+                    // 构建当前批次请求
+                    var request = BuildBulkToolRequest(currentMin, currentMax);
+
+                    // 发送当前批次请求
+                    var batchResult = await _apiClient.PostAsync<BaseResponse<double[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                    await Task.Delay(100); // 可选：添加短暂延迟以避免过快请求（根据实际情况调整）
+                    // 处理批次结果
+                    if (batchResult?.Code == 0 && batchResult.Value != null)
+                    {
+                        var batchToolList = ParseToolResponse(batchResult, currentMin, currentMax, allToolList.Count);
+                        allToolList.AddRange(batchToolList);
+                    }
+                    else
+                    {
+                        failedBatches.Add(batchIndex);
+                    }
+                }
+
+                // 4. 返回结果
+                if (allToolList.Count == 0 && failedBatches.Count == batchCount)
+                {
+                    return new BaseResponse<List<ToolInfoResponse>>
+                    {
+                        Status = $"所有批次请求失败。失败批次: {string.Join(", ", failedBatches)}"
+                    };
+                }
+
+                return new BaseResponse<List<ToolInfoResponse>>
+                {
+                    Code = 0,
+                    Status = failedBatches.Count > 0
+                        ? $"部分批次失败（失败批次: {string.Join(", ", failedBatches)}）"
+                        : "成功",
+                    Value = allToolList
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<List<ToolInfoResponse>>
+                {
+                    Status = $"获取刀具数据失败: {ex.Message}"
+                };
+            }
+        }
+
+        /// <summary>
+        /// 验证并解析刀具范围（与之前相同）
+        /// </summary>
+        private bool ValidateScopeFormat(string scope, out int min, out int max)
+        {
+            min = 0;
+            max = 0;
+
+            if (string.IsNullOrWhiteSpace(scope))
+                return false;
+
+            string[] parts = scope.Split(new[] { '-' }, 2);
+            if (parts.Length != 2)
+                return false;
+
+            if (!int.TryParse(parts[0], out min) || !int.TryParse(parts[1], out max))
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// 构建批量请求（为所有刀具预计算索引，与之前相同）
+        /// </summary>
+        private BaseRequest BuildBulkToolRequest(int minToolNumber, int maxToolNumber)
+        {
+            var request = new BaseRequest
+            {
+                Operation = "get_value",
+                Items = new List<RequestItem>()
+            };
+
+            for (int toolNumber = minToolNumber; toolNumber <= maxToolNumber; toolNumber++)
+            {
+                AddIndex(request, toolNumber, 6);
+                AddIndex(request, toolNumber, 11);
+                AddIndex(request, toolNumber, 29);
+                AddIndex(request, toolNumber, 34);
+                AddIndex(request, toolNumber, 79);
+            }
+
+            return request;
+        }
+
+        /// <summary>
+        /// 添加索引到请求（与之前相同）
+        /// </summary>
+        private void AddIndex(BaseRequest request, int toolNumber, int offset)
+        {
+            int index = 70000 + ((toolNumber - 1) * 200) + offset;
+            request.Items.Add(new RequestItem
+            {
+                Path = "/MACHINE/CONTROLLER/VARIABLE@MACRO",
+                Index = index
+            });
+        }
+
+        /// <summary>
+        /// 解析批量响应（已修复类型问题）
+        /// </summary>
+        private List<ToolInfoResponse> ParseToolResponse(
+            BaseResponse<double[][]> result,
+            int minToolNumber,
+            int maxToolNumber,
+            int existingLength
+            )
+        {
+            var toolList = new List<ToolInfoResponse>();
+            int totalTools = maxToolNumber - minToolNumber + 1;
+
+            if (result?.Value == null || result.Value.Length != totalTools * 5)
+            {
+                // 返回空列表（工业级处理：不返回错误，而是返回空数据）
+                return new List<ToolInfoResponse>();
+            }
+
+            for (int i = 0; i < totalTools; i++)
+            {
+                var toolResponse = new ToolInfoResponse
+                {
+                    // ✅ 工业级修复：使用 double 类型的默认值 0.0
+                    ToolNumber = i + existingLength + 1,
+                    LengthCompensation = result.Value[i * 5]?[0] ?? 0.0,
+                    RadiusCompensation = result.Value[i * 5 + 1]?[0] ?? 0.0,
+                    LengthWear = result.Value[i * 5 + 2]?[0] ?? 0.0,
+                    RadiusWear = result.Value[i * 5 + 3]?[0] ?? 0.0,
+                    ComprehensiveLifespan = result.Value[i * 5 + 4]?[0] ?? 0.0
+                };
+
+                toolList.Add(toolResponse);
+            }
+
+            return toolList;
+        }
+
+        #endregion
         /// <summary>
         /// 获取用户变量值
         /// </summary>
@@ -1280,6 +1791,112 @@ namespace HZtest.Services
         }
         #endregion
 
+
+        #region 寄存器操作接口
+
+        /// <summary>
+        /// 读取寄存器
+        /// </summary>
+        /// <param name="userVariables"></param>
+        /// <returns></returns>
+        public async Task<BaseResponse<RegisterOperationResponse>> GetRegisterAsync(RegisterOperationRequest register)
+        {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<RegisterOperationResponse> { Status = "未设置设备 SNCode" };
+            }
+            try
+            {
+
+                var request = new BaseRequest
+                {
+                    Operation = "get_value",
+                    Items = new List<RequestItem>(),
+                };
+                request.Items.Add(new RequestItem
+                {
+                    Path = $"/MACHINE/CONTROLLER/VARIABLE@REG_{register.RegisterType.ToString().ToUpper()}",
+                    Index = register.RegisterAddress,
+                });
+
+
+                var result = await _apiClient.GetAsync<BaseResponse<int?[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                var registerOperationResponse = new RegisterOperationResponse()
+                {
+                    DecimalValue = result?.Value[0][0],
+                };
+                //转换对应寄存器类型的十进制数值为最终的十进制数值（有符号数、无符号数、浮点数等）
+                registerOperationResponse.ConvertToDecimalValue(register.RegisterType);
+
+                return new BaseResponse<RegisterOperationResponse>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = registerOperationResponse
+                };
+
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<RegisterOperationResponse>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
+
+        /// <summary>
+        /// 写入寄存器
+        /// </summary>
+        /// <param name="userVariables"></param>
+        /// <returns></returns>
+        public async Task<BaseResponse<bool>> SetRegisterAsync(RegisterOperationRequest register)
+        {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<bool> { Status = "未设置设备 SNCode" };
+            }
+            try
+            {
+
+                var request = new BaseRequest
+                {
+                    Operation = "set_value",
+                    Items = new List<RequestItem>(),
+                };
+                request.Items.Add(new RequestItem
+                {
+                    Path = $"/MACHINE/CONTROLLER/VARIABLE@REG_{register.RegisterType.ToString().ToUpper()}",
+                    Index = register.RegisterAddress,
+                    Offset = register.RegisterOffset,
+                    Value = register.RegisterWriteValue
+                });
+                var result = await _apiClient.PostAsync<BaseResponse<bool[]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                return new BaseResponse<bool>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = result?.Value[0] ?? false
+                };
+
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<bool>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
+
+
+
+
+
+
+
+
+        #endregion
 
     }
 }

@@ -28,7 +28,7 @@
                     SelectedValuePath="Value"
                     SelectedValue="{Binding SelectedCoordinateSystem}"
                     FontSize="20"
-                    Width="250"
+                    Width="230"
                     Height="30"
                     Margin="10"/>
         </StackPanel>

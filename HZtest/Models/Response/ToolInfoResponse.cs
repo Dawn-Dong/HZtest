@@ -10,6 +10,11 @@ namespace HZtest.Models.Response
     public class ToolInfoResponse
     {
         /// <summary>
+        /// 刀具号
+        /// </summary>
+        public int ToolNumber { get; set; }
+
+        /// <summary>
         /// 长度补偿值
         /// </summary>
         public double LengthCompensation { get; set; }

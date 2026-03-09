@@ -2,6 +2,7 @@
 using HZtest.Interfaces_接口定义;
 using HZtest.Models.Response;
 using HZtest.Services;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -18,7 +19,7 @@ namespace HZtest.ViewModels
         private readonly IDialogService _dialogService;
         private readonly DeviceService _deviceService;
         private readonly IMessageService _message_service;
-
+        private readonly IConfiguration _configuration;
 
         //Ui属性
         private string _toolNumber = string.Empty;
@@ -59,11 +60,15 @@ namespace HZtest.ViewModels
         public ICommand QueryToolInfoCommand { get; }
 
 
-        public ToolInfoViewModel(DeviceService deviceService, IDialogService dialogService, IMessageService messageService)
+        private readonly int _maxToolNumber = 0;
+
+        public ToolInfoViewModel(DeviceService deviceService, IDialogService dialogService, IMessageService messageService, IConfiguration configuration)
         {
             _deviceService = deviceService ?? throw new ArgumentNullException(nameof(deviceService));
             _message_service = messageService ?? throw new ArgumentNullException(nameof(messageService));
             _deviceService = deviceService ?? throw new ArgumentNullException(nameof(deviceService));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _maxToolNumber = _configuration.GetValue<int>("ToolInfo:MaxToolNumber", 20); // 从配置文件获取最大刀具，默认为20
             QueryToolInfoCommand = new RelayCommand(GetToolInfoAsync);
 
         }
@@ -75,28 +80,50 @@ namespace HZtest.ViewModels
         {
             try
             {
+                string scope = string.Empty;
                 if (string.IsNullOrWhiteSpace(ToolNumber))
                 {
                     // 处理工具号为空的情况，例如显示错误消息
-                    _message_service.ShowError("请输入刀具号");
-                    return;
+                    //_message_service.ShowError("请输入刀具号");
+                    //return;
+                    scope = $"1-{_maxToolNumber}";
                 }
+
+
 
                 if (!int.TryParse(ToolNumber, out int toolNumberResult))
                 {
-                    // 处理工具号不是有效整数的情况，例如显示错误消息
-                    _message_service.ShowError("刀具号必须是一个有效的整数");
-                    return;
+                    if (!string.IsNullOrWhiteSpace(ToolNumber))
+                    {
+                        // 处理工具号不是有效整数的情况，例如显示错误消息
+                        _message_service.ShowError("刀具号必须是一个有效的整数");
+                        return;
+                    }
                 }
 
                 IsLoading = true;
-                var toolInfo = await _deviceService.GetDeviceToolInforAsync(toolNumberResult);
-                await Task.Delay(1000);
-                var toolInfoResponse = toolInfo.Value;
-                var toolInfoList = new List<ToolInfoResponse>();
-                toolInfoList.Add(toolInfoResponse);
-                if (toolInfoResponse != null)
-                    ToolInfoList = toolInfoList;
+
+
+
+                List<ToolInfoResponse> toolInfoList = null;
+
+                if (!string.IsNullOrEmpty(scope))
+                {
+                    var response = await _deviceService.GetDeviceToolInfoListAsync(scope);
+                    toolInfoList = response.Value ?? new List<ToolInfoResponse>();
+                    await Task.Delay(500);
+                }
+                else
+                {
+                    var response = await _deviceService.GetDeviceToolInfoAsync(toolNumberResult);
+                    toolInfoList = response.Value != null
+                        ? new List<ToolInfoResponse> { response.Value }
+                        : new List<ToolInfoResponse>();
+                    await Task.Delay(500);
+                }
+
+                ToolInfoList = toolInfoList;
+
                 IsLoading = false;
 
             }
