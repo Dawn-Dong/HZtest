@@ -69,6 +69,7 @@ namespace HZtest.ViewModels
             _deviceService = deviceService ?? throw new ArgumentNullException(nameof(deviceService));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _maxToolNumber = _configuration.GetValue<int>("ToolInfo:MaxToolNumber", 20); // 从配置文件获取最大刀具，默认为20
+            GetToolInfoAsync();
             QueryToolInfoCommand = new RelayCommand(GetToolInfoAsync);
 
         }

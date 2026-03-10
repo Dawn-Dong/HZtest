@@ -33,17 +33,27 @@
 
 
             <TextBlock Grid.Row="0" Grid.Column="0"  Text="操作寄存器：" FontSize="24" FontWeight="Bold" Margin="30,10,0,0" VerticalAlignment="Center" />
-            <ComboBox  Grid.Row="0" Grid.Column="1"
-                Margin="30,10,0,0"
-                VerticalAlignment="Center"
-                HorizontalAlignment="Left"
-                ItemsSource="{Binding RegisterTypeList}"
-                DisplayMemberPath="Description"
-                SelectedValuePath="Value"
-                SelectedValue="{Binding SelectedRegisterType}"
-                FontSize="20"
-                Width="250"
-                Height="30"/>
+
+            <StackPanel  Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <ComboBox  
+                    Margin="30,10,0,0"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Left"
+                    ItemsSource="{Binding RegisterTypeList}"
+                    DisplayMemberPath="Description"
+                    SelectedValuePath="Value"
+                    SelectedValue="{Binding SelectedRegisterType}"
+                    FontSize="20"
+                    Width="250"
+                    Height="30"
+                    
+                    
+                    />
+                <TextBlock VerticalAlignment="Center" FontSize="20" Margin="20,10,0,0"  Text="{Binding RegisterRange}"/>
+
+
+            </StackPanel>
+
 
 
             <TextBlock Grid.Row="1" Grid.Column="0"  Text="操作模式：" FontSize="24" FontWeight="Bold" Margin="30,10,0,0" VerticalAlignment="Center" />
@@ -57,12 +67,21 @@
             <TextBox Grid.Row="2" Grid.Column="1" HorizontalAlignment="Left" Text="{Binding RegisterAddress, Mode=TwoWay}" FontSize="24" Margin="30,10,0,0" VerticalAlignment="Center" Width="350" />
 
 
-            <TextBlock Grid.Row="3" Grid.Column="0"  Text="地址偏移：" FontSize="24" FontWeight="Bold" Margin="30,10,0,0" VerticalAlignment="Center" />
-            <TextBox Grid.Row="3" Grid.Column="1" HorizontalAlignment="Left" Text="{Binding RegisterAddressOffset, Mode=TwoWay}" IsEnabled="{Binding IsWriteMode}" FontSize="24" Margin="30,10,0,0" VerticalAlignment="Center" Width="350" />
+            <!--<TextBlock Grid.Row="3" Grid.Column="0"  Text="地址偏移：" FontSize="24" FontWeight="Bold" Margin="30,10,0,0" VerticalAlignment="Center" />
+            <TextBox Grid.Row="3" Grid.Column="1" HorizontalAlignment="Left" Text="{Binding RegisterAddressOffset, Mode=TwoWay}" IsEnabled="{Binding IsWriteMode}" FontSize="24" Margin="30,10,0,0" VerticalAlignment="Center" Width="350" />-->
 
             <TextBlock  Grid.Row="4" Grid.Column="0"  Text="写入值：" FontSize="24" FontWeight="Bold" Margin="30,10,0,0" VerticalAlignment="Center" />
-            <TextBox Grid.Row="4" Grid.Column="1"  HorizontalAlignment="Left"  Text="{Binding RegisterWriteValue, Mode=TwoWay}" IsEnabled="{Binding IsWriteMode}" FontSize="24" Margin="30,10,0,0" VerticalAlignment="Center" Width="350" />
-
+            <StackPanel  Grid.Row="4" Grid.Column="1"   Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBox HorizontalAlignment="Left" Visibility="Hidden"    Text="{Binding RegisterWriteValue, Mode=TwoWay}" IsEnabled="{Binding IsWriteMode}" FontSize="24" Margin="30,10,0,0" VerticalAlignment="Center" Width="350" />
+                
+                <CheckBox 
+                        Content="二进制写入" 
+                        IsChecked="{Binding IsBinaryEnabled, Mode=TwoWay}"                     
+                        Margin="30,10,0,0" 
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Center"
+                         /> 
+            </StackPanel>
             <Button Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"  Content="操作" FontSize="24"  Height="50" Width="100" Margin="40" VerticalAlignment="Center" Command="{Binding RegisterOperationCommand}"/>
 
 

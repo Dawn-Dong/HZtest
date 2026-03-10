@@ -40,14 +40,16 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
+
+            <!-- 表头 -->
             <TextBlock Text="刀具号" 
-                        Grid.Row="0"
-                        Grid.Column="0" 
-                        Foreground="LightGray" 
-                        FontWeight="Bold" 
-                        HorizontalAlignment="Center" 
-                        VerticalAlignment="Center"
-                        FontSize="14"/>
+                       Grid.Row="0"
+                       Grid.Column="0" 
+                       Foreground="LightGray" 
+                       FontWeight="Bold" 
+                       HorizontalAlignment="Center" 
+                       VerticalAlignment="Center"
+                       FontSize="14"/>
 
             <TextBlock Text="长度补偿值" 
                        Grid.Row="0"
@@ -90,13 +92,16 @@
                        VerticalAlignment="Center"
                        FontSize="14"/>
 
-            <ItemsControl ItemsSource="{Binding ToolInfoList}"
-                          Grid.Row="1"
+            <!-- 修正：ScrollViewer包裹ItemsControl -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                          Grid.Row="1" 
                           Grid.ColumnSpan="6"
-                          Visibility="{Binding ToolInfoList.Count, 
-                                     Converter={StaticResource CountToVis}, 
-                                     ConverterParameter='>0'}" 
-                    VirtualizingPanel.IsVirtualizing="True">
+                          Margin="0,5,0,0">
+                <ItemsControl ItemsSource="{Binding ToolInfoList}"
+                              Visibility="{Binding ToolInfoList.Count, 
+                                         Converter={StaticResource CountToVis}, 
+                                         ConverterParameter='>0'}" 
+                              VirtualizingPanel.IsVirtualizing="True">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Grid>
@@ -117,7 +122,6 @@
                                            FontSize="14"
                                            HorizontalAlignment="Center" 
                                            VerticalAlignment="Center"/>
-
 
                                 <TextBlock Text="{Binding LengthCompensation}" 
                                            Grid.Column="1"
@@ -159,16 +163,15 @@
                                            FontSize="14"
                                            HorizontalAlignment="Center" 
                                            VerticalAlignment="Center"/>
-
                             </Grid>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+            </ScrollViewer>
 
-
-                <!-- 无数据提示 -->
-                <TextBlock Grid.RowSpan="2" 
-                        Grid.ColumnSpan="6"
+            <!-- 无数据提示 -->
+            <TextBlock Grid.Row="1" 
+                       Grid.ColumnSpan="6"
                        Text="当前无信息" 
                        Visibility="{Binding ToolInfoList.Count, 
                                  Converter={StaticResource CountToVis}, 
@@ -179,17 +182,19 @@
                        FontWeight="Bold"
                        Foreground="#FFD32F2F"/>
         </Grid>
-        <Grid Grid.Row="1" Grid.RowSpan="2" Grid.ColumnSpan="2" Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+
+        <!-- 加载状态 -->
+        <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Grid.Background>
                 <SolidColorBrush Color="#80000000" Opacity="0.8"/>
             </Grid.Background>
             <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
                 <control:CircularProgressControl Width="48" Height="48"/>
                 <TextBlock Text="加载中..." 
-                               Foreground="White" 
-                               FontSize="16" 
-                               Margin="0,12,0,0"
-                               HorizontalAlignment="Center"/>
+                           Foreground="White" 
+                           FontSize="16" 
+                           Margin="0,12,0,0"
+                           HorizontalAlignment="Center"/>
             </Grid>
         </Grid>
     </Grid>

@@ -37,6 +37,7 @@ namespace HZtest.ViewModels
             {
                 _selectedRegisterType = value;
                 OnPropertyChanged();
+                OnRegisterTypeSelected((RegisterTypeEnum)_selectedRegisterType);
             }
         }
 
@@ -105,8 +106,20 @@ namespace HZtest.ViewModels
                 OnPropertyChanged(nameof(RegisterWriteValue));
             }
         }
+        /// <summary>
+        /// 显示范围
+        /// </summary>
+        private string _registerRange = string.Empty;
 
-
+        public string RegisterRange
+        {
+            get => _registerRange;
+            set
+            {
+                _registerRange = value;
+                OnPropertyChanged(nameof(RegisterRange));
+            }
+        }
 
 
         // ===== 命令 =====
@@ -133,6 +146,8 @@ namespace HZtest.ViewModels
                 });
             }
             _selectedRegisterType = RegisterTypeEnum.G.GetHashCode();
+            var registerInfo = GetRegisterInfo((RegisterTypeEnum)_selectedRegisterType);
+            _registerRange = $"范围：0-{registerInfo.MaximumWritableAddress}";
         }
 
         public RegisterOperationViewModel(IDialogService dialogService, DeviceService deviceService, IMessageService message_service)
@@ -250,5 +265,14 @@ namespace HZtest.ViewModels
                 ?? throw new ArgumentException($"寄存器 {register} 没有找到特性.");
         }
 
+        /// <summary>
+        /// 选择了新的寄存器类型
+        /// </summary>
+        private void OnRegisterTypeSelected(RegisterTypeEnum registerType)
+        {
+            var registerInfo = GetRegisterInfo(registerType);
+            RegisterRange = $"范围：0-{registerInfo.MaximumWritableAddress}";
+
+        }
     }
 }
