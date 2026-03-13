@@ -4,9 +4,16 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:HZtest.View"
+      xmlns:converter="clr-namespace:HZtest.Converters.View"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
       Title="RegisterOperationPage">
+    <Page.Resources>
+        <!-- 转换器定义 -->
+        <converter:BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <converter:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+    </Page.Resources>
+
 
     <Grid>
         <Grid.RowDefinitions>
@@ -27,16 +34,16 @@
 
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="160"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
 
-            <TextBlock Grid.Row="0" Grid.Column="0"  Text="操作寄存器：" FontSize="24" FontWeight="Bold" Margin="30,10,0,0" VerticalAlignment="Center" />
+            <TextBlock Grid.Row="0" Grid.Column="0"  Text="操作寄存器：" FontSize="24" FontWeight="Bold" Margin="10,10,0,0" VerticalAlignment="Center" />
 
             <StackPanel  Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                 <ComboBox  
-                    Margin="30,10,0,0"
+                    Margin="10,10,0,0"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Left"
                     ItemsSource="{Binding RegisterTypeList}"
@@ -56,32 +63,169 @@
 
 
 
-            <TextBlock Grid.Row="1" Grid.Column="0"  Text="操作模式：" FontSize="24" FontWeight="Bold" Margin="30,10,0,0" VerticalAlignment="Center" />
+            <TextBlock Grid.Row="1" Grid.Column="0"  Text="操作模式：" FontSize="24" FontWeight="Bold" Margin="10,10,0,0" VerticalAlignment="Center" />
             <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                <RadioButton  Margin="30,0,0,0" GroupName="operationMode"  IsChecked="{Binding IsReadMode, Mode=TwoWay}">读取</RadioButton>
-                <RadioButton  Margin="15,0,0,0"  GroupName="operationMode" IsChecked="{Binding IsWriteMode, Mode=TwoWay}" >写入</RadioButton>
+                <RadioButton  Margin="10,0,0,0" GroupName="operationMode"  IsChecked="{Binding IsReadMode, Mode=TwoWay}">读取</RadioButton>
+                <RadioButton  Margin="10,0,0,0"  GroupName="operationMode" IsChecked="{Binding IsWriteMode, Mode=TwoWay}" >写入</RadioButton>
             </StackPanel>
 
 
-            <TextBlock Grid.Row="2" Grid.Column="0"  Text="寄存器地址：" FontSize="24" FontWeight="Bold" Margin="30,10,0,0" VerticalAlignment="Center" />
-            <TextBox Grid.Row="2" Grid.Column="1" HorizontalAlignment="Left" Text="{Binding RegisterAddress, Mode=TwoWay}" FontSize="24" Margin="30,10,0,0" VerticalAlignment="Center" Width="350" />
+            <TextBlock Grid.Row="2" Grid.Column="0"  Text="寄存器地址：" FontSize="24" FontWeight="Bold" Margin="10,10,0,0" VerticalAlignment="Center" />
+            <TextBox Grid.Row="2" Grid.Column="1" HorizontalAlignment="Left" Text="{Binding RegisterAddress, Mode=TwoWay}" FontSize="24" Margin="10,10,0,0" VerticalAlignment="Center" Width="350" />
 
 
             <!--<TextBlock Grid.Row="3" Grid.Column="0"  Text="地址偏移：" FontSize="24" FontWeight="Bold" Margin="30,10,0,0" VerticalAlignment="Center" />
             <TextBox Grid.Row="3" Grid.Column="1" HorizontalAlignment="Left" Text="{Binding RegisterAddressOffset, Mode=TwoWay}" IsEnabled="{Binding IsWriteMode}" FontSize="24" Margin="30,10,0,0" VerticalAlignment="Center" Width="350" />-->
 
-            <TextBlock  Grid.Row="4" Grid.Column="0"  Text="写入值：" FontSize="24" FontWeight="Bold" Margin="30,10,0,0" VerticalAlignment="Center" />
-            <StackPanel  Grid.Row="4" Grid.Column="1"   Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBox HorizontalAlignment="Left" Visibility="Hidden"    Text="{Binding RegisterWriteValue, Mode=TwoWay}" IsEnabled="{Binding IsWriteMode}" FontSize="24" Margin="30,10,0,0" VerticalAlignment="Center" Width="350" />
-                
-                <CheckBox 
-                        Content="二进制写入" 
-                        IsChecked="{Binding IsBinaryEnabled, Mode=TwoWay}"                     
-                        Margin="30,10,0,0" 
+            <TextBlock  Grid.Row="4" Grid.Column="0"  Text="读写值：" FontSize="24" FontWeight="Bold" Margin="10,10,0,0" VerticalAlignment="Center" />
+
+
+            <Grid  Grid.Row="4" Grid.Column="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition  Width="Auto"/>
+                    <ColumnDefinition  Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox HorizontalAlignment="Left"  Visibility="{Binding IsBinaryEnabled,  Converter={StaticResource InverseBoolToVisibilityConverter}}"  
+                         Grid.Column="0"  Text="{Binding RegisterWriteValue, Mode=TwoWay}" IsEnabled="{Binding IsWriteMode}" FontSize="24" Margin="10,0,0,0"
+                         VerticalAlignment="Center" Width="350" Height="32" />
+
+                <CheckBox  Grid.Column="1"
+                        Content="二进制模式" 
+                        IsChecked="{Binding IsBinaryEnabled, Mode=TwoWay}" 
                         VerticalAlignment="Center"
-                        HorizontalAlignment="Center"
-                         /> 
-            </StackPanel>
+                        Margin="5,0,0,0"
+                        HorizontalAlignment="Left" Height="15" Width="80"
+                         />
+                <Grid Grid.Column="0" 
+                     Visibility="{Binding IsBinaryEnabled, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <!-- 二进制面板（二进制模式时显示） -->
+                    <Border 
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="15"
+                        Margin="10,10,0,0"
+                        >
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <!-- 默认写入模式样式 -->
+                                <Setter Property="Background" Value="#F5F5F5"/>
+                                <Setter Property="BorderBrush" Value="#CCCCCC"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                                <Setter Property="IsEnabled" Value="True"/>
+
+                                <!-- 优先级更高，后定义覆盖先定义 -->
+                                <Style.Triggers>
+                                    <!-- 读取模式：变黄 + 禁用 -->
+                                    <DataTrigger Binding="{Binding IsWriteMode}" Value="False">
+                                        <Setter Property="Background" Value="#FFF3E0"/>
+                                        <Setter Property="BorderBrush" Value="#FFB74D"/>
+                                        <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Grid>
+                            <StackPanel>
+                                <!-- 提示文字：读取模式显示 -->
+                                <TextBlock Text="只读模式 - 显示当前寄存器值" 
+                               Foreground="#E65100"
+                               FontSize="12"
+                               Margin="0,0,0,8"
+                               Visibility="{Binding IsWriteMode, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+
+                                <!-- 提示 -->
+                                <TextBlock Text="点击切换每一位的值0/1（高位在左）" 
+                                       FontSize="12" Foreground="Gray" 
+                                       Margin="0,0,0,8"/>
+
+                                <!-- 位序号 + 位按钮 -->
+                                <ItemsControl ItemsSource="{Binding Bits}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <!--<StackPanel Orientation="Horizontal"/>-->
+                                            <UniformGrid Columns="8"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Vertical" Margin="2,0">
+                                                <!-- 位序号标签 -->
+                                                <TextBlock Text="{Binding BitPosition}" 
+                                                   Width="30" 
+                                                   TextAlignment="Center"
+                                                   FontSize="11" 
+                                                   Foreground="Gray"
+                                                   Margin="0,0,0,2"/>
+
+                                                <!-- 位按钮 -->
+                                                <Button Width="26" Height="26"
+                                                 Command="{Binding ToggleCommand}"        
+                                                 CommandParameter="{Binding BitPosition}"
+                                                 Cursor="Hand"   
+                                                 ToolTipService.InitialShowDelay="0"
+                                                 >
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border Background="{TemplateBinding Background}" 
+                                                                        BorderBrush="Gray" 
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="4">
+                                                                            <ContentPresenter HorizontalAlignment="Center" 
+                                                                        VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                            <Style.Triggers>
+                                                                <!-- DataTrigger绑定Value属性 -->
+                                                                <DataTrigger Binding="{Binding Value}" Value="False">
+                                                                    <Setter Property="Background" Value="#E0E0E0"/>
+                                                                    <Setter Property="Foreground" Value="Gray"/>
+                                                                    <Setter Property="Content" Value="0"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Value}" Value="True">
+                                                                    <Setter Property="Background" Value="#2196F3"/>
+                                                                    <Setter Property="Foreground" Value="White"/>
+                                                                    <Setter Property="Content" Value="1"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- 当前值显示 -->
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                    <TextBlock Text="当前值：" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding BinaryValue}" 
+                           FontSize="16" FontWeight="Bold"
+                           Foreground="#2196F3"
+                           VerticalAlignment="Center"
+                           Margin="5,0,0,0"/>
+                                    <TextBlock Text="{Binding BinaryValue, StringFormat=' (0x{0:X4})'}" 
+                           FontSize="14" Foreground="Gray"
+                           VerticalAlignment="Center"
+                           Margin="8,0,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                        </Grid>
+                    </Border>
+                </Grid>
+
+            </Grid>
+
+
+
+
             <Button Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"  Content="操作" FontSize="24"  Height="50" Width="100" Margin="40" VerticalAlignment="Center" Command="{Binding RegisterOperationCommand}"/>
 
 

@@ -112,4 +112,36 @@ namespace HZtest.Models.Response
 
 
     }
+
+
+    /// <summary>
+    /// 单个寄存器位写入结果
+    /// </summary>
+    public class RegisterWriteResultResponse
+    {
+        /// <summary>寄存器类型（如 G、M、X、Y）</summary>
+        public RegisterTypeEnum RegisterType { get; set; }
+
+        /// <summary>寄存器地址</summary>
+        public int RegisterAddress { get; set; }
+
+        /// <summary>位位置（偏移量）</summary>
+        public int? BitPosition { get; set; }
+
+        /// <summary>写入的值（0或1）</summary>
+        public int WriteValue { get; set; }
+
+        /// <summary>是否成功</summary>
+        public bool Success { get; set; }
+
+        /// <summary>结果消息</summary>
+        public string Message { get; set; } = string.Empty;
+
+        /// <summary>友好描述</summary>
+        public string Description => BitPosition.HasValue
+            ? $"{RegisterType} | {RegisterAddress} 第 {BitPosition} 位 = {WriteValue}"
+            : $"{RegisterType}{RegisterAddress} = {WriteValue}";
+    }
+
+
 }

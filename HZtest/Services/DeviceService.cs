@@ -6,6 +6,7 @@ using HZtest.Models.Request;
 using HZtest.Models.Response;
 using HZtest.Universal;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -1848,7 +1849,7 @@ namespace HZtest.Services
         /// <summary>
         /// 写入寄存器
         /// </summary>
-        /// <param name="userVariables"></param>
+        /// <param name="register"></param>
         /// <returns></returns>
         public async Task<BaseResponse<bool>> SetRegisterAsync(RegisterOperationRequest register)
         {
@@ -1890,7 +1891,150 @@ namespace HZtest.Services
         }
 
 
+        ///// <summary>
+        ///// 批量带偏移量写入寄存器
+        ///// </summary>
+        ///// <param name="registerList"></param>
+        ///// <returns></returns>
+        //public async Task<BaseResponse<bool>> SetRegisterListAsync(List<RegisterOperationRequest> registerList)
+        //{
+        //    if (string.IsNullOrEmpty(CurrentSNCode))
+        //    {
+        //        return new BaseResponse<bool> { Status = "未设置设备 SNCode" };
+        //    }
+        //    try
+        //    {
 
+        //        var request = new BaseRequest
+        //        {
+        //            Operation = "set_value",
+        //            Items = new List<RequestItem>(),
+        //        };
+
+        //        foreach (var item in registerList)
+        //        {
+
+        //            request.Items.Add(new RequestItem
+        //            {
+        //                Path = $"/MACHINE/CONTROLLER/VARIABLE@REG_{item.RegisterType.ToString().ToUpper()}",
+        //                Index = item.RegisterAddress,
+        //                Offset = item.RegisterOffset,
+        //                Value = item.RegisterWriteValue
+        //            });
+        //        }
+
+        //        var result = await _apiClient.PostAsync<BaseResponse<bool[]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+        //        return new BaseResponse<bool>
+        //        {
+        //            Code = result?.Code ?? -1,
+        //            Status = result?.Status ?? "未知错误",
+        //            Value = result?.Value[0] ?? false
+        //        };
+
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return new BaseResponse<bool>
+        //        {
+        //            Status = $"错误: {ex.Message}",
+        //        };
+        //    }
+        //}  
+        /// <summary>
+        /// 批量带偏移量写入寄存器，返回详细失败信息
+        /// </summary>
+        /// <param name="registerList">寄存器操作列表</param>
+        /// <returns>每个操作的执行结果</returns>
+        public async Task<BaseResponse<List<RegisterWriteResultResponse>>> SetRegisterListAsync(List<RegisterOperationRequest> registerList)
+        {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<List<RegisterWriteResultResponse>>
+                {
+                    Status = "未设置设备 SNCode"
+                };
+            }
+
+            if (registerList == null || registerList.Count == 0)
+            {
+                return new BaseResponse<List<RegisterWriteResultResponse>>
+                {
+                    Status = "寄存器列表为空"
+                };
+            }
+
+            try
+            {
+                var request = new BaseRequest
+                {
+                    Operation = "set_value",
+                    Items = registerList.Select(item => new RequestItem
+                    {
+                        Path = $"/MACHINE/CONTROLLER/VARIABLE@REG_{item.RegisterType.ToString().ToUpper()}",
+                        Index = item.RegisterAddress,
+                        Offset = item.RegisterOffset,
+                        Value = item.RegisterWriteValue
+                    }).ToList(),
+                };
+
+                var result = await _apiClient
+                    .PostAsync<BaseResponse<bool[]>>($"/v1/{CurrentSNCode}/data", request)
+                    .ConfigureAwait(false);
+
+                // 构建详细结果
+                var details = new List<RegisterWriteResultResponse>();
+                bool[]? results = result?.Value;
+
+                for (int i = 0; i < registerList.Count; i++)
+                {
+                    var item = registerList[i];
+
+                    bool success = results != null && i < results.Length && results[i];
+
+                    details.Add(new RegisterWriteResultResponse
+                    {
+                        RegisterType = item.RegisterType,
+                        RegisterAddress = item.RegisterAddress,
+                        BitPosition = item.RegisterOffset,      // 偏移量即位号
+                        WriteValue = item.RegisterWriteValue,     // 写入的值（0或1）
+                        Success = success,
+                        Message = success ? "成功" : (result?.Status ?? "未知错误")
+                    });
+                }
+
+                // 统计
+                int successCount = details.Count(r => r.Success);
+                int failCount = details.Count - successCount;
+
+                return new BaseResponse<List<RegisterWriteResultResponse>>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = failCount == 0
+                        ? $"全部成功 ({successCount}/{details.Count})"
+                        : $"部分失败：成功 {successCount}，失败 {failCount}",
+                    Value = details,
+                };
+            }
+            catch (Exception ex)
+            {
+                // 全部标记为失败
+                var details = registerList.Select(item => new RegisterWriteResultResponse
+                {
+                    RegisterType = item.RegisterType,
+                    RegisterAddress = item.RegisterAddress,
+                    BitPosition = item.RegisterOffset,
+                    WriteValue = item.RegisterWriteValue,
+                    Success = false,
+                    Message = $"异常: {ex.Message}"
+                }).ToList();
+
+                return new BaseResponse<List<RegisterWriteResultResponse>>
+                {
+                    Status = $"批量写入异常: {ex.Message}",
+                    Value = details,
+                };
+            }
+        }
 
 
 
