@@ -33,7 +33,7 @@
 
         <!-- 标题 -->
         <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
-                   Text="设备连接测试" 
+                   Text="设备连接" 
                    FontSize="24" 
                    FontWeight="Bold"
                    HorizontalAlignment="Center"
@@ -55,7 +55,7 @@
 
         <!-- 测试按钮 -->
         <Button Grid.Row="2" Grid.Column="2"
-                Content="测试连接状态" 
+                Content="连接设备" 
                 x:Name="TestConnectionButton" 
                 Click="TestConnectionButton_Click"
                 FontSize="20" 
@@ -65,7 +65,7 @@
 
         <!-- 提示信息 -->
         <Label Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3"
-               Content="先测试连接状态" 
+               Content="请先输入设备SN码在连接设备" 
                x:Name="PromptLabel"
                HorizontalAlignment="Center"
                VerticalAlignment="Center"

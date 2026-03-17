@@ -136,6 +136,7 @@ namespace HZtest.Converters
             return result;
         }
 
+        #region 枚举的转化
         /// <summary>
         /// 安全获取枚举的 Description 特性值（支持无效值返回）
         /// </summary>
@@ -162,9 +163,6 @@ namespace HZtest.Converters
             }
             return defaultDescription;
         }
-
-
-
 
 
         /// <summary>
@@ -204,8 +202,30 @@ namespace HZtest.Converters
                 return null; // 字符串不是有效枚举名
             return enumValue;
         }
+        /// <summary>
+        /// 从 Description 字符串获取枚举值
+        /// </summary>
+        /// <typeparam name="TEnum">目标枚举类型</typeparam>
+        /// <param name="description">枚举的Description值</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static TEnum GetEnumFromDescription<TEnum>(this string description) where TEnum : struct, Enum
+        {
+            foreach (var field in typeof(TEnum).GetFields())
+            {
+                if (Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute))
+                    is DescriptionAttribute attr && attr.Description == description)
+                {
+                    return (TEnum)field.GetValue(null);
+                }
+            }
+
+            throw new ArgumentException($"未找到 Description 为 '{description}' 的枚举值");
+        }
 
 
+
+        #endregion
         /// <summary>
         /// 从 string[][] 中提取单一值（取 [0][0]）
         /// </summary>

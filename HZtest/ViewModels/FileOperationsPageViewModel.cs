@@ -192,23 +192,23 @@ namespace HZtest.ViewModels
                 _message_service.ShowError("先确保设备现在是空闲状态。");
                 return;
             }
-            //// 1. 调用你的接口获取数据
-            var allAxisData = await _deviceService.BatchGetAllActualAndRemainingFeedAsync();
-            //判断数据
-            const double ZeroThreshold = 0.0;
+            ////// 1. 调用你的接口获取数据
+            //var allAxisData = await _deviceService.BatchGetAllActualAndRemainingFeedAsync();
+            ////判断数据
+            //const double ZeroThreshold = 0.0;
 
-            bool IsAllAxesStopped = allAxisData.Value != null &&
-                                    allAxisData.Value.Count >= 5 && // 确保有5轴数据
-                                    allAxisData.Value
-                                        .Take(5) // 仅检查前5轴（X/Y/Z/B/C）
-                                        .All(axis => axis.ActualFeedRate == ZeroThreshold
-                                        && !double.IsNaN(axis.ActualFeedRate) && // 实际可省略（0.0 != NaN）
-                                           !double.IsInfinity(axis.ActualFeedRate));
-            if (!IsAllAxesStopped)
-            {
-                _message_service.ShowError("先将设备各个轴归零。");
-                return;
-            }
+            //bool IsAllAxesStopped = allAxisData.Value != null &&
+            //                        allAxisData.Value.Count >= 5 && // 确保有5轴数据
+            //                        allAxisData.Value
+            //                            .Take(5) // 仅检查前5轴（X/Y/Z/B/C）
+            //                            .All(axis => axis.ActualFeedRate == ZeroThreshold
+            //                            && !double.IsNaN(axis.ActualFeedRate) && // 实际可省略（0.0 != NaN）
+            //                               !double.IsInfinity(axis.ActualFeedRate));
+            //if (!IsAllAxesStopped)
+            //{
+            //    _message_service.ShowError("先将设备各个轴归零。");
+            //    return;
+            //}
 
 
 

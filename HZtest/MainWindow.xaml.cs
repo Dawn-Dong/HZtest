@@ -23,6 +23,18 @@ namespace HZtest
     {
 
         private readonly MainWindowViewModel _mainWindowViewModel;
+
+        // 默认样式
+        private static readonly Brush DefaultBackground = Brushes.LightGray;
+        private static readonly Brush DefaultForeground = Brushes.Black;
+        private static readonly FontWeight DefaultFontWeight = FontWeights.Normal;
+
+        // 选中样式
+        private static readonly Brush SelectedBackground = Brushes.DodgerBlue;
+        private static readonly Brush SelectedForeground = Brushes.White;
+        private static readonly FontWeight SelectedFontWeight = FontWeights.Bold;
+
+        private Button _currentSelectedButton;
         /// <summary>
         /// 操作的设备SN码
         /// </summary>
@@ -77,6 +89,7 @@ namespace HZtest
                 return;
             }
             MainFrame.Content = homePage;
+            SelectButton(HomeButton);
             if (StatusTextBlock != null)
             {
                 StatusTextBlock.Text = $"当前操作设备SN码:{SNCode}";
@@ -104,7 +117,7 @@ namespace HZtest
             }
             MainFrame.Content = fileOperationsPage;
 
-
+            SelectButton(FileButton);
 
 
             // 或者： MainFrame.Navigate(new FileOperationsPage());
@@ -126,6 +139,7 @@ namespace HZtest
                 viewModel.Initialize();
             }
             MainFrame.Content = homePage;
+            SelectButton(HomeButton);
 
         }
         /// <summary>
@@ -147,6 +161,7 @@ namespace HZtest
                 // viewModel.Initialize();
             }
             MainFrame.Content = alarmInfoPage;
+            SelectButton(AlarmInfoButton);
         }
         /// <summary>
         /// 点击 “工具信息” 按钮时在右侧 Frame 显示 ToolInfoPage
@@ -167,6 +182,7 @@ namespace HZtest
                 //viewModel.Initialize();
             }
             MainFrame.Content = toolInfoPage;
+            SelectButton(ToolInfoButton);
 
 
         }
@@ -188,6 +204,7 @@ namespace HZtest
                 //viewModel.Initialize();
             }
             MainFrame.Content = userVariablesPage;
+            SelectButton(UserVariablesButton);
         }
         /// <summary>
         ///  点击 “相对坐标系” 按钮时在右侧 Frame 显示 RelativeCoordinateSystemPage
@@ -207,6 +224,7 @@ namespace HZtest
                 //viewModel.Initialize();
             }
             MainFrame.Content = relativeCoordinateSystemPage;
+            SelectButton(RelativeCoordinateSystemButton);
 
         }
         /// <summary>
@@ -227,7 +245,29 @@ namespace HZtest
                 //viewModel.Initialize();
             }
             MainFrame.Content = RegisterOperaionPage;
+            SelectButton(RegisterOperationButton);
         }
+
+
+        private void SelectButton(Button button)
+        {
+            // 重置之前按钮
+            if (_currentSelectedButton != null)
+                SetButtonStyle(_currentSelectedButton, false);
+
+            // 设置新按钮
+            SetButtonStyle(button, true);
+            _currentSelectedButton = button;
+        }
+
+        private void SetButtonStyle(Button button, bool isSelected)
+        {
+            button.Background = isSelected ? SelectedBackground : DefaultBackground;
+            button.Foreground = isSelected ? SelectedForeground : DefaultForeground;
+            button.FontWeight = isSelected ? SelectedFontWeight : DefaultFontWeight;
+
+        }
+
 
     }
 }

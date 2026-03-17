@@ -638,7 +638,8 @@ namespace HZtest.Services
             }
             try
             {
-                var analysisFilsName = Path.GetFileName(filsName);
+                //截取出来../prog/ 后边全部值作为文件请求值
+                var analysisFilsName =  filsName.Replace("../prog/", "");
                 if (string.IsNullOrEmpty(analysisFilsName))
                 {
                     return new BaseResponse<FileOperationsModel> { Status = "文件名称解析失败" };

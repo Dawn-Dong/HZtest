@@ -29,13 +29,13 @@
         </Grid.ColumnDefinitions>
 
         <Border Grid.Column="0" Background="LightGray" Grid.RowSpan="7" />
-        <Button Content="主页"  Grid.Column="0"  Grid.Row="0"  Click="HomeButton_Click"/>
-        <Button Content="文件"  Grid.Column="0"  Grid.Row="1"  Click="FileButton_Click"/>
-        <Button Content="报警信息"  Grid.Column="0"  Grid.Row="2"  Click="AlarmInfoButton_Click"/>
-        <Button Content="刀具信息"  Grid.Column="0"  Grid.Row="3"  Click="ToolInfoButton_Click"/>
-        <Button Content="用户变量"  Grid.Column="0"  Grid.Row="4"  Click="UserVariablesButton_Click"/>
-        <Button Content="相对坐标系"  Grid.Column="0"  Grid.Row="5"  Click="RelativeCoordinateSystemButton_Click"/>
-        <Button Content="寄存器操作"  Grid.Column="0"  Grid.Row="6"  Click="RegisterOperationButton_Click"/>
+        <Button x:Name="HomeButton" Content="主页" Grid.Column="0" Grid.Row="0" Click="HomeButton_Click" Cursor="Hand"/>
+        <Button x:Name="FileButton" Content="文件" Grid.Column="0" Grid.Row="1" Click="FileButton_Click" Cursor="Hand"/>
+        <Button x:Name="AlarmInfoButton" Content="报警信息" Grid.Column="0" Grid.Row="2" Click="AlarmInfoButton_Click" Cursor="Hand"/>
+        <Button x:Name="ToolInfoButton" Content="刀具信息" Grid.Column="0" Grid.Row="3" Click="ToolInfoButton_Click" Cursor="Hand"/>
+        <Button x:Name="UserVariablesButton" Content="用户变量" Grid.Column="0" Grid.Row="4" Click="UserVariablesButton_Click" Cursor="Hand"/>
+        <Button x:Name="RelativeCoordinateSystemButton" Content="相对坐标系" Grid.Column="0" Grid.Row="5" Click="RelativeCoordinateSystemButton_Click" Cursor="Hand"/>
+        <Button x:Name="RegisterOperationButton" Content="寄存器操作" Grid.Column="0" Grid.Row="6" Click="RegisterOperationButton_Click" Cursor="Hand"/>
 
 
         <Frame Grid.Column="1"  Grid.RowSpan="7" x:Name="MainFrame" NavigationUIVisibility="Hidden"/>

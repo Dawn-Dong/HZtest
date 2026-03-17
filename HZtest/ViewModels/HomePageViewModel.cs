@@ -332,6 +332,13 @@ namespace HZtest.ViewModels
         private async Task ExecuteStartAsync()
         {
 
+
+            if (OperationMode.GetEnumFromDescription<DevOperationModeEnum>() != DevOperationModeEnum.Auto)
+            {
+                _message_service.ShowError($"请在自动模式下操作");
+                return;
+            }
+
             var startStopStateDto = new StartStopStateDto()
             {
                 SetStatus = StartStopStatusEnum.Start,
@@ -356,6 +363,13 @@ namespace HZtest.ViewModels
         /// <returns></returns>
         private async Task ExecutePauseAsync()
         {
+
+            if (OperationMode.GetEnumFromDescription<DevOperationModeEnum>() != DevOperationModeEnum.Auto)
+            {
+                _message_service.ShowError($"请在自动模式下操作");
+                return;
+            }
+
             var startStopStateDto = new StartStopStateDto()
             {
                 SetStatus = StartStopStatusEnum.Stop,

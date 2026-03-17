@@ -111,7 +111,7 @@
             <TextBlock Grid.Row="0" Grid.Column="0"  Grid.ColumnSpan="2"  Text="{Binding MainAxisSpeedDisplay}" Foreground="Black" FontSize="30"   TextAlignment="Left" VerticalAlignment="Center" HorizontalAlignment="Left"  ></TextBlock>
             <!--复位图标按钮在右上方-->
             <!-- 图标按钮（无边框/背景，悬停有反馈） -->
-            <!--<Button Grid.Row="0" Grid.Column="1" 
+            <Button Grid.Row="0" Grid.Column="1" 
                     Command="{Binding ResetCommand}"
                     Style="{StaticResource IconButtonStyle}"
                     ToolTip="设备复位"
@@ -123,7 +123,7 @@
                     <Path Data="{StaticResource Reset}" 
                           Fill="{Binding ModeIconColor, FallbackValue=#3e0505}"/>
                 </Viewbox>
-            </Button>-->
+            </Button>
 
 
             <!-- 替换原 TextBlock，使用 StackPanel 水平排列 -->
