@@ -25,6 +25,9 @@ namespace HZtest
         public static IServiceProvider Services { get; private set; }
         public static IConfiguration Configuration { get; private set; }
 
+        // 属性注入，方便全局访问
+        public static IStructuredLogger _logger { get; private set; } = new StructuredLogger();
+
         // 全局 SqlSugar 客户端
         public static SqlSugarClient Db { get; private set; }
 
@@ -37,14 +40,18 @@ namespace HZtest
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .Build();
 
-            // 2. 初始化数据库（在 BuildServiceProvider 之前）
-            InitializeDatabase();
-
-            // 3. 注册服务
+            // 2. 注册服务
             var serviceCollection = new ServiceCollection();
             ConfigureServices(serviceCollection);
+
+            // 3. 初始化数据库（在 BuildServiceProvider 之前）
+            InitializeDatabase(serviceCollection);
+
+
             Services = serviceCollection.BuildServiceProvider();
 
+            // 结构化日志实例化 - 确保在 BuildServiceProvider 之后获取实例
+            _logger = Services.GetRequiredService<IStructuredLogger>();
             // 4. 启动主窗口
             var mainWindow = Services.GetRequiredService<MainWindow>();
             Current.MainWindow = mainWindow;
@@ -167,17 +174,20 @@ namespace HZtest
         /// <summary>
         /// 初始化数据库(自动建库建表 并且通过配置文件连接)
         /// </summary>
-        private void InitializeDatabase()
+        private void InitializeDatabase(ServiceCollection services)
         {
             try
             {
+                var db = SqlSugarSetup.CreateClient(Configuration);
+                // 手动自动建表（根据特性自动找到对应数据库） 后续可以修改为更自动的方式，例如扫描程序集中的所有模型类进行创建
+                db.CodeFirst.InitTables(typeof(AlarmManagementConfigModel));
 
-
+                services.AddSingleton(db);  // 注入多租户客户端
 
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"数据库初始化失败: {ex.Message}");
+                _logger.Error("数据库初始化失败", ex);
             }
         }
     }

@@ -1,10 +1,13 @@
 ﻿using HZtest.Models.Response;
+using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace HZtest.Models
 {
+
+
     /// <summary>
     /// 报警信息模型
     /// </summary>
