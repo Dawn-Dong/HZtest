@@ -1,0 +1,344 @@
+{
+  "NLog": {
+    // 当配置文件发生变化时，自动重新加载配置（无需重启应用）
+    "autoReload": true,
+
+    // 配置异常时抛出错误（便于开发调试，生产环境建议设为 false）
+    "throwConfigExceptions": true,
+
+    // NLog 内部日志级别（Off/Trace/Debug/Info/Warn/Error/Fatal）
+    // 用于排查 NLog 自身的问题，Off 表示关闭内部日志记录
+    "internalLogLevel": "Off",
+
+    // NLog 内部日志文件路径（当 internalLogLevel 不为 Off 时生效）
+    // ${basedir} 表示应用程序所在目录
+    "internalLogFile": "${basedir}/logs/internal-nlog.log",
+
+    // 变量定义区：可在下方配置中通过 ${变量名} 引用
+    "variables": {
+      // 日志文件存放的根目录路径
+      // ${basedir} 是 NLog 内置变量，表示 .exe 所在目录
+      "logDir": "${basedir}/logs",
+
+      // 日志文件名中的日期部分格式
+      // ${date:format=yyyyMMdd} 生成如 20260323 的日期字符串
+      "fileName": "${date:format=yyyyMMdd}.log",
+
+      // 统一的日志内容格式模板，被多个 target 复用
+      // ${longdate} = 完整日期时间（2025-03-23 10:30:45.1234）
+      // ${level:uppercase=true} = 日志级别转大写（DEBUG/INFO/ERROR）
+      // ${message} = 日志消息内容
+      // ${exception:format=tostring} = 异常对象的完整信息（如果有）
+      "layoutFormat": "${longdate} | ${level:uppercase=true} | ${message} ${exception:format=tostring}"
+    },
+
+    // 日志目标定义区：配置日志输出到哪里（文件/控制台/数据库等）
+    "targets": {
+      // ============================================
+      // 目标 1：默认 Debug 级别文件目标
+      // 作用：接收所有 Debug 级别的日志（包括单参数和双参数调用）
+      // 输出位置：logs/debug-20260323.log
+      // ============================================
+      "debugFile": {
+        // 目标类型为 File（文件输出）
+        "type": "File",
+
+        // 日志文件的完整路径和名称
+        // ${logDir} = 上面定义的变量 logs
+        // ${fileName} = 上面定义的变量 20260323.log
+        // 最终生成：logs/debug-20260323.log
+        "fileName": "${logDir}/debug/debug-${fileName}",
+
+        // 单条日志的内容格式，引用上面定义的 layoutFormat 变量
+        "layout": "${layoutFormat}",
+
+        // 归档文件（历史日志）的命名格式
+        // {#} 是占位符，会被 archiveDateFormat 替换
+        // 生成：logs/archives/debug-20260322.log
+        "archiveFileName": "${logDir}/debug/archives/debug-{#}.log",
+
+        // 归档文件日期格式，与 fileName 中的日期格式保持一致
+        "archiveDateFormat": "yyyyMMdd",
+
+        // 单个日志文件大小超过此值时触发归档（单位：字节）
+        // 10485760 = 10MB，超过后自动创建新文件，旧文件移入 archives
+        "archiveAboveSize": 10485760,
+
+        // 最多保留 30 个归档文件，旧的自动删除，防止磁盘占满
+        "maxArchiveFiles": 30,
+        // 自动创建目录（如果不存在）
+        "createDirs": true
+      },
+
+
+      // ============================================
+      // 目标 2：双参数模式（文件夹=debug，文件名=第二参数）
+      // 输出位置：logs/debug/{SubCategory}-20260323.log
+      // 匹配调用：_logger.Debug("api", "测试");
+      // ============================================
+      "subCategoryFile": {
+        "type": "File",
+        // 路径结构：logs/debug/{SubCategory}-20260323.log
+        // ${event-properties:item=SubCategory} 从代码中读取第二参数
+        "fileName": "${logDir}/debug/${event-properties:item=SubCategory}-${fileName}",
+        "layout": "${layoutFormat}",
+        "archiveFileName": "${logDir}/debug/archives/${event-properties:item=SubCategory}-{#}.log",
+        "archiveDateFormat": "yyyyMMdd",
+        "archiveAboveSize": 10485760,
+        "maxArchiveFiles": 30,
+        "createDirs": true
+      },
+
+      // ============================================
+      // 目标 3：三参数模式（完整分层路径）
+      // 输出位置：logs/debug/{Folder}/{SubCategory}-20260323.log
+      // 匹配调用：_logger.Debug("接口调用日志", "api", "测试");
+      // ============================================
+      "fullCategoryFile": {
+        "type": "File",
+        // 【核心】三层路径结构：
+        // 第一参数 Folder → logs/接口调用日志/
+        // 第二参数 SubCategory → api-20260323.log
+        "fileName": "${logDir}/${event-properties:item=Folder}/${event-properties:item=SubCategory}-${fileName}",
+        "layout": "${layoutFormat}",
+        "archiveFileName": "${logDir}/${event-properties:item=Folder}/archives/${event-properties:item=SubCategory}-{#}.log",
+        "archiveDateFormat": "yyyyMMdd",
+        "archiveAboveSize": 10485760,
+        "maxArchiveFiles": 30,
+        "createDirs": true
+      },
+
+
+      // ============================================
+      // 目标 4：默认 Info 级别文件（单参数）
+      // 输出位置：logs/info/info-20260323.log
+      // ============================================
+      "infoFile": {
+        "type": "File",
+        "fileName": "${logDir}/info/info-${fileName}",
+        "layout": "${layoutFormat}",
+        "archiveFileName": "${logDir}/info/archives/info-{#}.log",
+        "archiveDateFormat": "yyyyMMdd",
+        "archiveAboveSize": 10485760,
+        "maxArchiveFiles": 30,
+        "createDirs": true
+      },
+
+      // ============================================
+      // 目标 5：Info 双参数模式
+      // 输出位置：logs/info/{SubCategory}-20260323.log
+      // ============================================
+      "infoSubCategoryFile": {
+        "type": "File",
+        "fileName": "${logDir}/info/${event-properties:item=SubCategory}-${fileName}",
+        "layout": "${layoutFormat}",
+        "archiveFileName": "${logDir}/info/archives/${event-properties:item=SubCategory}-{#}.log",
+        "archiveDateFormat": "yyyyMMdd",
+        "archiveAboveSize": 10485760,
+        "maxArchiveFiles": 30,
+        "createDirs": true
+      },
+
+      // ============================================
+      // 目标 6：Info 三参数模式
+      // 输出位置：logs/{Folder}/{SubCategory}-20260323.log
+      // ============================================
+      "infoFullCategoryFile": {
+        "type": "File",
+        "fileName": "${logDir}/${event-properties:item=Folder}/${event-properties:item=SubCategory}-${fileName}",
+        "layout": "${layoutFormat}",
+        "archiveFileName": "${logDir}/${event-properties:item=Folder}/archives/${event-properties:item=SubCategory}-{#}.log",
+        "archiveDateFormat": "yyyyMMdd",
+        "archiveAboveSize": 10485760,
+        "maxArchiveFiles": 30,
+        "createDirs": true
+      },
+
+      // ============================================
+      // 目标 7：默认 Error 级别文件（单参数）
+      // 输出位置：logs/error/error-20260323.log
+      // ============================================
+      "errorFile": {
+        "type": "File",
+        "fileName": "${logDir}/error/error-${fileName}",
+        "layout": "${layoutFormat}",
+        "archiveFileName": "${logDir}/error/archives/error-{#}.log",
+        "archiveDateFormat": "yyyyMMdd",
+        "archiveAboveSize": 10485760,
+        "maxArchiveFiles": 30,
+        "createDirs": true
+      },
+
+      // ============================================
+      // 目标 8：Error 双参数模式
+      // 输出位置：logs/error/{SubCategory}-20260323.log
+      // ============================================
+      "errorSubCategoryFile": {
+        "type": "File",
+        "fileName": "${logDir}/error/${event-properties:item=SubCategory}-${fileName}",
+        "layout": "${layoutFormat}",
+        "archiveFileName": "${logDir}/error/archives/${event-properties:item=SubCategory}-{#}.log",
+        "archiveDateFormat": "yyyyMMdd",
+        "archiveAboveSize": 10485760,
+        "maxArchiveFiles": 30,
+        "createDirs": true
+      },
+
+      // ============================================
+      // 目标 9：Error 三参数模式
+      // 输出位置：logs/{Folder}/{SubCategory}-20260323.log
+      // ============================================
+      "errorFullCategoryFile": {
+        "type": "File",
+        "fileName": "${logDir}/${event-properties:item=Folder}/${event-properties:item=SubCategory}-${fileName}",
+        "layout": "${layoutFormat}",
+        "archiveFileName": "${logDir}/${event-properties:item=Folder}/archives/${event-properties:item=SubCategory}-{#}.log",
+        "archiveDateFormat": "yyyyMMdd",
+        "archiveAboveSize": 10485760,
+        "maxArchiveFiles": 30,
+        "createDirs": true
+      }
+    },
+
+    // 日志路由规则：定义哪些日志写入哪些目标
+    "rules": [
+      // ============================================
+      // Debug 级别规则组
+      // ============================================
+
+      // 规则 1：Debug 单参数 → debugFile
+      {
+        "logger": "*",
+        "minLevel": "Debug",
+        "maxLevel": "Debug",
+        "writeTo": "debugFile",
+        "filters": {
+          "when": {
+            // 条件：Folder 和 SubCategory 都未设置（单参数模式）
+            "condition": "length('${event-properties:item=Folder}') = 0 and length('${event-properties:item=SubCategory}') = 0",
+            "action": "Log"
+          }
+        }
+      },
+
+      // 规则 2：Debug 双参数 → subCategoryFile
+      {
+        "logger": "*",
+        "minLevel": "Debug",
+        "maxLevel": "Debug",
+        "writeTo": "subCategoryFile",
+        "filters": {
+          "when": {
+            // 条件：Folder 未设置，但 SubCategory 已设置（双参数模式）
+            "condition": "length('${event-properties:item=Folder}') = 0 and length('${event-properties:item=SubCategory}') > 0",
+            "action": "Log"
+          }
+        }
+      },
+
+      // 规则 3：Debug 三参数 → fullCategoryFile
+      {
+        "logger": "*",
+        "minLevel": "Debug",
+        "maxLevel": "Debug",
+        "writeTo": "fullCategoryFile",
+        "filters": {
+          "when": {
+            // 条件：Folder 和 SubCategory 都已设置（三参数模式）
+            "condition": "length('${event-properties:item=Folder}') > 0 and length('${event-properties:item=SubCategory}') > 0",
+            "action": "Log"
+          }
+        }
+      },
+
+      // ============================================
+      // Info 级别规则组
+      // ============================================
+
+      // 规则 4：Info 单参数 → infoFile
+      {
+        "logger": "*",
+        "minLevel": "Info",
+        "maxLevel": "Info",
+        "writeTo": "infoFile",
+        "filters": {
+          "when": {
+            "condition": "length('${event-properties:item=Folder}') = 0 and length('${event-properties:item=SubCategory}') = 0",
+            "action": "Log"
+          }
+        }
+      },
+
+      // 规则 5：Info 双参数 → infoSubCategoryFile
+      {
+        "logger": "*",
+        "minLevel": "Info",
+        "maxLevel": "Info",
+        "writeTo": "infoSubCategoryFile",
+        "filters": {
+          "when": {
+            "condition": "length('${event-properties:item=Folder}') = 0 and length('${event-properties:item=SubCategory}') > 0",
+            "action": "Log"
+          }
+        }
+      },
+
+      // 规则 6：Info 三参数 → infoFullCategoryFile
+      {
+        "logger": "*",
+        "minLevel": "Info",
+        "maxLevel": "Info",
+        "writeTo": "infoFullCategoryFile",
+        "filters": {
+          "when": {
+            "condition": "length('${event-properties:item=Folder}') > 0 and length('${event-properties:item=SubCategory}') > 0",
+            "action": "Log"
+          }
+        }
+      },
+
+      // ============================================
+      // Error 级别规则组（含 Fatal）
+      // ============================================
+
+      // 规则 7：Error 单参数 → errorFile
+      {
+        "logger": "*",
+        "minLevel": "Error",
+        "writeTo": "errorFile",
+        "filters": {
+          "when": {
+            "condition": "length('${event-properties:item=Folder}') = 0 and length('${event-properties:item=SubCategory}') = 0",
+            "action": "Log"
+          }
+        }
+      },
+
+      // 规则 8：Error 双参数 → errorSubCategoryFile
+      {
+        "logger": "*",
+        "minLevel": "Error",
+        "writeTo": "errorSubCategoryFile",
+        "filters": {
+          "when": {
+            "condition": "length('${event-properties:item=Folder}') = 0 and length('${event-properties:item=SubCategory}') > 0",
+            "action": "Log"
+          }
+        }
+      },
+
+      // 规则 9：Error 三参数 → errorFullCategoryFile
+      {
+        "logger": "*",
+        "minLevel": "Error",
+        "writeTo": "errorFullCategoryFile",
+        "filters": {
+          "when": {
+            "condition": "length('${event-properties:item=Folder}') > 0 and length('${event-properties:item=SubCategory}') > 0",
+            "action": "Log"
+          }
+        }
+      }
+    ]
+  }
+}

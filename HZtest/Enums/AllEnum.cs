@@ -353,4 +353,102 @@ namespace HZtest.Models
         D = 9,
     }
 
+    /// <summary>
+    /// 报警类型枚举
+    /// </summary>
+    public enum AlarmTypeEnum
+    {
+        /// <summary>
+        /// 未知报警类型
+        /// </summary>
+        [Description("未知报警类型")]
+        Error = -1,
+
+        /// <summary>
+        /// 系统报警
+        /// </summary>
+        [Description("系统报警")]
+        SystemAlarm = 0,
+
+        /// <summary>
+        /// 通道报警
+        /// </summary>
+        [Description("通道报警")]
+        ChannelAlarm = 1,
+
+        /// <summary>
+        /// 轴报警
+        /// </summary>
+        [Description("轴报警")]
+        AxisAlarm = 2,
+
+        /// <summary>
+        /// 伺服报警
+        /// </summary>
+        [Description("伺服报警")]
+        ServoAlarm = 3,
+
+        /// <summary>
+        /// PLC报警
+        /// </summary>
+        [Description("PLC报警")]
+        PLCAlarm = 4,
+
+        /// <summary>
+        /// 设备报警
+        /// </summary>
+        [Description("设备报警")]
+        DeviceAlarm = 5,
+
+        /// <summary>
+        /// 语法报警
+        /// </summary>
+        [Description("语法报警")]
+        ProgramSyntaxAlarm = 6,
+
+        /// <summary>
+        /// 用户PLC报警
+        /// </summary>
+        [Description("用户PLC报警")]
+        UserPLCAlarm = 7,
+
+        /// <summary>
+        /// HMI报警
+        /// </summary>
+        [Description("HMI报警")]
+        HMIAlarm = 8,
+
+        /// <summary>
+        /// EtherCAT伺服报警
+        /// </summary>
+        [Description("EtherCAT伺服报警")]
+        EtherCATAlarm = 9,
+    }
+
+    /// <summary>
+    /// 报警级别枚举
+    /// </summary>
+    public enum AlarmLevelEnum
+    {
+
+        /// <summary>
+        /// 未知错误级别
+        /// </summary>
+        [Description("未知错误级别")]
+        Error = -1,
+
+
+        /// <summary>
+        /// 错误级别 需要停止加工，人工干预
+        /// </summary>
+        [Description("错误级别")]
+        ErrorLevel = 0,
+
+        /// <summary>
+        /// 提示级别 需要关注，但不需立即处理
+        /// </summary>
+        [Description("提示级别")]
+        MessageLevel = 1,
+    }
+
 }

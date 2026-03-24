@@ -1,4 +1,5 @@
-﻿using HZtest.Services;
+﻿using HZtest.Interfaces_接口定义;
+using HZtest.Services;
 using HZtest.View;
 using HZtest.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,9 +18,11 @@ namespace HZtest
     {
         private readonly DeviceService _deviceService;
 
-        public DevConnection(DeviceService deviceService)
+        private readonly IStructuredLogger _logger;
+        public DevConnection(DeviceService deviceService, IStructuredLogger structuredLogger)
         {
             _deviceService = deviceService ?? throw new ArgumentNullException(nameof(deviceService));
+            _logger = structuredLogger ?? throw new ArgumentNullException(nameof(structuredLogger));
             InitializeComponent();
         }
 
@@ -28,6 +31,7 @@ namespace HZtest
         /// </summary>
         private async void TestConnectionButton_Click(object sender, RoutedEventArgs e)
         {
+
             string snCode = SnTextBox.Text.Trim();
             if (string.IsNullOrEmpty(snCode))
             {

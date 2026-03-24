@@ -1,4 +1,6 @@
 ﻿using HZtest.Infrastructure_基础设施;
+using HZtest.Interfaces_接口定义;
+using HZtest.Models.Request;
 using HZtest.Models.Response;
 using HZtest.Services;
 using System;
@@ -13,14 +15,19 @@ namespace HZtest.ViewModels
     /// </summary>
     public class AlarmInfoPageViewModel : PageViewModelBaseClass
     {
-
+        // ===== 依赖服务（构造函数注入）=====
+        private readonly IDialogService _dialogService;
         private readonly DeviceService _deviceService;
+        private readonly IMessageService _message_service;
+
 
         // 取消令牌（用于停止监控）
         //private CancellationTokenSource _cts;
 
         //按钮命令
         public ICommand RefreshAlarmInfoCommand { get; }
+
+        public ICommand ConfigAlarmInfoCommand { get; }
 
         //Ui属性
         private List<DeviceAlarmInforResponse> _alarmInfoList = new List<DeviceAlarmInforResponse>();
@@ -44,11 +51,15 @@ namespace HZtest.ViewModels
         }
 
 
-        public AlarmInfoPageViewModel(DeviceService deviceService)
+        public AlarmInfoPageViewModel(DeviceService deviceService, IMessageService messageService , IDialogService dialogService)
         {
             _deviceService = deviceService ?? throw new ArgumentNullException(nameof(deviceService));
+            _message_service = messageService ?? throw new ArgumentNullException(nameof(messageService));
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             RefreshAlarmInfoCommand = new RelayCommand(GetAlarmInfoAsync);
+            ConfigAlarmInfoCommand = new AsyncRelayCommand(ConfigAlarmInfoDialogsAsync);
             GetAlarmInfoAsync();
+           
         }
         /// <summary>
         /// 获取设备报警信息
@@ -58,8 +69,11 @@ namespace HZtest.ViewModels
             {
                 try
                 {
+                    //之类不能插入数据只能查询数据
                     IsLoading = true;
                     var alarmInfo = await _deviceService.GetDeviceAlarmInforAsync();
+
+
                     await Task.Delay(1000);
                     AlarmInfoList = alarmInfo.Value;
                     IsLoading = false;
@@ -74,7 +88,24 @@ namespace HZtest.ViewModels
 
             }
         }
+        /// <summary>
+        /// 配置报警信息弹窗页面
+        /// </summary>
+        private async Task ConfigAlarmInfoDialogsAsync()
+        {
+            try
+            {
+                //后弹出子对话框输入名称和选择本地文件
+                var fileUploadRequest = await _dialogService.ShowDialogAsync<bool?>("ConfigAlarmInfoLevel");
 
 
+
+
+            }
+            catch (Exception ex)
+            {
+                _message_service.ShowError($"对话框异常: {ex.Message}");
+            }
+        }
     }
 }

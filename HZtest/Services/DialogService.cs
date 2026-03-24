@@ -111,13 +111,19 @@ namespace HZtest.Services
 
             return await tcs.Task;
         }
-
+        /// <summary>
+        /// 创建对话框实例（根据名称），可扩展为使用反射或配置文件来动态加载对话框
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         private UserControl CreateDialog(string name)
         {
             return name switch
             {
                 "ModeSelection" => _serviceProvider.GetRequiredService<ModeSelectionDialog>(),
                 "UploadFile" => _serviceProvider.GetRequiredService<UploadFileDialogs>(),
+                "ConfigAlarmInfoLevel" => _serviceProvider.GetRequiredService<ConfigAlarmInfoLevelDialogs>(),
                 _ => throw new ArgumentException($"未知对话框: {name}")
             };
         }

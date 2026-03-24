@@ -1,4 +1,6 @@
-﻿using HZtest.Interfaces_接口定义;
+﻿using HZtest.Infrastructure_基础设施;
+using HZtest.Interfaces_接口定义;
+using HZtest.Models;
 using HZtest.Services;
 using HZtest.Universal;
 using HZtest.View;
@@ -9,6 +11,7 @@ using HZtest.Views.Dialogs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using SqlSugar;
 using System;
 using System.Net;
 using System.Net.Http;
@@ -22,6 +25,10 @@ namespace HZtest
         public static IServiceProvider Services { get; private set; }
         public static IConfiguration Configuration { get; private set; }
 
+        // 全局 SqlSugar 客户端
+        public static SqlSugarClient Db { get; private set; }
+
+
         protected override void OnStartup(StartupEventArgs e)
         {
             // 1. 配置
@@ -30,21 +37,23 @@ namespace HZtest
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .Build();
 
-            // 2. 注册服务
+            // 2. 初始化数据库（在 BuildServiceProvider 之前）
+            InitializeDatabase();
+
+            // 3. 注册服务
             var serviceCollection = new ServiceCollection();
             ConfigureServices(serviceCollection);
             Services = serviceCollection.BuildServiceProvider();
 
-            // 3. 启动主窗口
+            // 4. 启动主窗口
             var mainWindow = Services.GetRequiredService<MainWindow>();
             Current.MainWindow = mainWindow;
 
-            // 4. 延迟初始化需要UI元素的服务
+            // 5. 延迟初始化
             mainWindow.Loaded += (s, args) =>
             {
                 InitializeDialogService(mainWindow);
 
-                // 导航到起始页
                 if (mainWindow.MainFrame != null)
                 {
                     mainWindow.MainFrame.Content = Services.GetRequiredService<DevConnection>();
@@ -62,7 +71,8 @@ namespace HZtest
         {
             // 注册配置  单例模式 注入    
             services.AddSingleton(Configuration);
-            
+            // ========== 添加 NLog 结构化日志注册（只添加这一行）==========
+            services.AddSingleton<IStructuredLogger, StructuredLogger>();
             // 日志
             services.AddLogging(builder =>
             {
@@ -92,6 +102,7 @@ namespace HZtest
             // ViewModels Dialogs的 
             services.AddTransient<UploadFileViewModel>();
             services.AddTransient<ModeSelectionViewModel>();
+            services.AddTransient<ConfigAlarmInfoLevelViewModel>();
 
             // Views
             services.AddTransient<MainWindow>();
@@ -107,6 +118,7 @@ namespace HZtest
             // VIews Dialogs的
             services.AddTransient<ModeSelectionDialog>();
             services.AddTransient<UploadFileDialogs>();
+            services.AddTransient<ConfigAlarmInfoLevelDialogs>();
 
 
             // ApiClient: 使用 Typed Client，通过配置设置 BaseAddress；SetHandlerLifetime 控制 handler 重用周期
@@ -149,6 +161,23 @@ namespace HZtest
             catch (Exception ex)
             {
                 MessageBox.Show($"无法初始化对话服务：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 初始化数据库(自动建库建表 并且通过配置文件连接)
+        /// </summary>
+        private void InitializeDatabase()
+        {
+            try
+            {
+
+
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"数据库初始化失败: {ex.Message}");
             }
         }
     }
