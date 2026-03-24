@@ -110,6 +110,7 @@ namespace HZtest
             services.AddTransient<UploadFileViewModel>();
             services.AddTransient<ModeSelectionViewModel>();
             services.AddTransient<ConfigAlarmInfoLevelViewModel>();
+            services.AddTransient<AddOrUpdateAlarmInfoLevelViewModel>();
 
             // Views
             services.AddTransient<MainWindow>();
@@ -126,6 +127,7 @@ namespace HZtest
             services.AddTransient<ModeSelectionDialog>();
             services.AddTransient<UploadFileDialogs>();
             services.AddTransient<ConfigAlarmInfoLevelDialogs>();
+            services.AddTransient<AddOrUpdateAlarmInfoLevelDialogs>();
 
 
             // ApiClient: 使用 Typed Client，通过配置设置 BaseAddress；SetHandlerLifetime 控制 handler 重用周期

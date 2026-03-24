@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HZtest.ViewModels.Dialogs;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Windows;
@@ -18,9 +19,10 @@ namespace HZtest.View.Dialogs
     /// </summary>
     public partial class AddOrUpdateAlarmInfoLevelDialogs : UserControl
     {
-        public AddOrUpdateAlarmInfoLevelDialogs()
+        public AddOrUpdateAlarmInfoLevelDialogs(AddOrUpdateAlarmInfoLevelViewModel viewModel )
         {
             InitializeComponent();
+            DataContext = viewModel;
         }
     }
 }

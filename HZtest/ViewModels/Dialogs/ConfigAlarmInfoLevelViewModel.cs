@@ -1,5 +1,6 @@
 ﻿using HZtest.Interfaces_接口定义;
 using HZtest.Models.Request;
+using HZtest.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -15,6 +16,10 @@ namespace HZtest.ViewModels.Dialogs
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        // ===== 依赖服务（构造函数注入）=====
+        private readonly IDialogService _dialogService;
+        private readonly DeviceService _deviceService;
+        private readonly IMessageService _message_service;
 
         // IDialogAware 实现
         public event EventHandler<object> RequestClose;
@@ -60,11 +65,14 @@ namespace HZtest.ViewModels.Dialogs
         #endregion
 
 
-        public ConfigAlarmInfoLevelViewModel()
+        public ConfigAlarmInfoLevelViewModel(IDialogService dialogService, DeviceService deviceService, IMessageService messageService)
         {
+            _deviceService = deviceService ?? throw new ArgumentNullException(nameof(deviceService));
+            _message_service = messageService ?? throw new ArgumentNullException(nameof(messageService));
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             CloseCommand = new RelayCommand(Cancel);
             SearchCommand = new RelayCommand(Search);
-            AddCommand = new RelayCommand(AddAlarmConfig);
+            AddCommand = new AsyncRelayCommand(AddAlarmConfig);
         }
 
 
@@ -86,10 +94,12 @@ namespace HZtest.ViewModels.Dialogs
         /// <summary>
         /// 新增报警配置
         /// </summary>
-        private async void AddAlarmConfig()
+        private async Task AddAlarmConfig()
         {
             try
             {
+                // 打开新增报警配置窗口
+                var fileUploadRequest = await _dialogService.ShowDialogAsync<int?>("AddOrUpdateAlarmInfoLevel",666);
 
             }
             catch (Exception ex)

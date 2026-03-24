@@ -8,7 +8,7 @@ using System.Windows.Input;
 namespace HZtest.Models
 {
     /// <summary>
-    /// 寄存器地址类型下拉框选择项模型
+    /// 下拉框选择项模型
     /// </summary>
     public class EnumDescriptionRegisterAddress
     {

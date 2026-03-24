@@ -7,7 +7,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="600" d:DesignWidth="500">
 
-    <Border Background="White" BorderBrush="Gray" BorderThickness="2" CornerRadius="5" Padding="10" Width="500" Height="600">
+    <Border Background="White" BorderBrush="Gray" BorderThickness="2" CornerRadius="5" Padding="10" Width="500" Height="150">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -17,10 +17,41 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="报警代码：" FontSize="13" FontWeight="Bold" Margin="10,5,0,0" VerticalAlignment="Center"/>
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="报警级别：" FontSize="13" FontWeight="Bold" Margin="10,5,0,0" VerticalAlignment="Center"/>
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="报警代码：" FontSize="18" FontWeight="Bold" Margin="10,5,0,0" VerticalAlignment="Center"/>
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="报警级别：" FontSize="18" FontWeight="Bold" Margin="10,5,0,0" VerticalAlignment="Center"/>
+
+            <TextBox Grid.Column="1" 
+                     Text="{Binding AlarmCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     FontSize="18"
+                     VerticalContentAlignment="Center"
+                     HorizontalAlignment="Left"
+                     Width="250"
+                     Height="25"
+                     Margin="10,5,0,0"/>
+            <ComboBox  
+                    Grid.Column="1" Grid.Row="1"
+                    Margin="10,5,0,0"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Left"
+                    ItemsSource="{Binding AlarmLevelList}"
+                    DisplayMemberPath="Description"
+                    SelectedValuePath="Value"
+                    SelectedValue="{Binding AlarmLevel}"
+                    FontSize="18"
+                    Width="250"
+                    Height="30"
+                    />
+            <StackPanel Grid.Row="3"
+                        Grid.ColumnSpan="2"
+                        Orientation="Horizontal" 
+                        HorizontalAlignment="Center"
+                        Margin="0,20,0,0">
+                <Button  Content="{Binding ConfirmButtonContent}" Width="80" Height="32" Margin="0,0,10,0"  Command="{Binding ConfirmCommand}"/>
+                <Button  Content="取消" Width="80" Height="32"  Command="{Binding CloseCommand}"/>
+            </StackPanel>
+
+
         </Grid>
     </Border>
 </UserControl>
