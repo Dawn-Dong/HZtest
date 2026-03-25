@@ -14,14 +14,14 @@ namespace HZtest.Models.BaseClass
         /// <summary>
         /// 主键Id
         /// </summary>
-        [SugarColumn(IsPrimaryKey = true, IsIdentity = true)]
-        public int Id { get; set; }
+        [SugarColumn(IsPrimaryKey = true)]
+        public long Id { get; set; }
 
         /// <summary>
         /// 修改时间
         /// </summary>
         [SugarColumn(IsNullable = true)]
-        public DateTime ModifyTime { get; set; }
+        public DateTime? ModifyTime { get; set; } = null;
 
         /// <summary>
         /// 创建时间

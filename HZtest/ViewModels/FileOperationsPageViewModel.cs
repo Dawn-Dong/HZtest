@@ -522,24 +522,24 @@ namespace HZtest.ViewModels
                 //后弹出子对话框输入名称和选择本地文件
                 var FileUploadRequest = await _dialogService.ShowDialogAsync<FileUploadRequest?>("UploadFile");
 
-                if (FileUploadRequest == null)
+                if (FileUploadRequest.Data == null)
                 {
                     // 用户点击了取消
                     _message_service.ShowMessage("操作已取消");
                     return;
                 }
-                if (string.IsNullOrEmpty(FileUploadRequest.LocalFilePath))
+                if (string.IsNullOrEmpty(FileUploadRequest.Data.LocalFilePath))
                 {
                     _message_service.ShowError("上传文件路径无效。");
                     return;
                 }
-                if (string.IsNullOrEmpty(FileUploadRequest.FileName))
+                if (string.IsNullOrEmpty(FileUploadRequest.Data.FileName))
                     _message_service.ShowError("文件名称不能命名为空");
 
-                FileUploadRequest.LocatedPath = path;
+                FileUploadRequest.Data.LocatedPath = path;
 
                 //请求接口实际执行上传到数控系统操作
-                var response = await _deviceService.UploadFileAsync(FileUploadRequest);
+                var response = await _deviceService.UploadFileAsync(FileUploadRequest.Data);
                 if (response.Code != 0)
                 {
                     _message_service.ShowError($"上传异常: {response.Status}");

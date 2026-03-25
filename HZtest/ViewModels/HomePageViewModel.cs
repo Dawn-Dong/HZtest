@@ -426,16 +426,16 @@ namespace HZtest.ViewModels
                 // 参数2: 传入当前模式值（可选）
                 var result = await _dialogService.ShowDialogAsync<int?>("ModeSelection", CurrentModeValue);
 
-                if (result == CurrentModeValue)
+                if (result.Data == CurrentModeValue)
                 {
                     _message_service.ShowMessage($"模式未变化");
                     return;
                 }
                 // 处理结果
-                if (result.HasValue)
+                if (result.Success)
                 {
                     // 用户点击了确定
-                    CurrentModeValue = result.Value; // 更新本地状态
+                    CurrentModeValue = result.Data ?? 1 ; // 更新本地状态
                     var setResult = await _deviceService.SetOperationModeAsync((DevOperationModeEnum)CurrentModeValue);
                     if (setResult.Code == 0)
                     {

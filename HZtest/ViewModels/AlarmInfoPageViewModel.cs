@@ -51,7 +51,7 @@ namespace HZtest.ViewModels
         }
 
 
-        public AlarmInfoPageViewModel(DeviceService deviceService, IMessageService messageService , IDialogService dialogService)
+        public AlarmInfoPageViewModel(DeviceService deviceService, IMessageService messageService, IDialogService dialogService)
         {
             _deviceService = deviceService ?? throw new ArgumentNullException(nameof(deviceService));
             _message_service = messageService ?? throw new ArgumentNullException(nameof(messageService));
@@ -59,7 +59,7 @@ namespace HZtest.ViewModels
             RefreshAlarmInfoCommand = new RelayCommand(GetAlarmInfoAsync);
             ConfigAlarmInfoCommand = new AsyncRelayCommand(ConfigAlarmInfoDialogsAsync);
             GetAlarmInfoAsync();
-           
+
         }
         /// <summary>
         /// 获取设备报警信息
@@ -72,7 +72,6 @@ namespace HZtest.ViewModels
                     //之类不能插入数据只能查询数据
                     IsLoading = true;
                     var alarmInfo = await _deviceService.GetDeviceAlarmInforAsync();
-
 
                     await Task.Delay(1000);
                     AlarmInfoList = alarmInfo.Value;
@@ -96,7 +95,7 @@ namespace HZtest.ViewModels
             try
             {
                 //后弹出子对话框输入名称和选择本地文件
-                var fileUploadRequest = await _dialogService.ShowDialogAsync<bool?>("ConfigAlarmInfoLevel");
+                var fileUploadRequest = await _dialogService.ShowDialogAsync<bool?>("ConfigAlarmInfoLevel", allowMultiLayer: true);
 
 
 

@@ -157,11 +157,11 @@
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding AlarmLevel}" Value="HIGH">
+                                                            <DataTrigger Binding="{Binding AlarmLevel}" Value="ErrorLevel">
                                                                 <Setter Property="Foreground" Value="#F44336"/>
                                                                 <Setter Property="FontWeight" Value="Bold"/>
                                                             </DataTrigger>
-                                                            <DataTrigger Binding="{Binding AlarmLevel}" Value="MED">
+                                                            <DataTrigger Binding="{Binding AlarmLevel}" Value="MessageLevel">
                                                                 <Setter Property="Foreground" Value="#FF9800"/>
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding AlarmLevel}" Value="LOW">

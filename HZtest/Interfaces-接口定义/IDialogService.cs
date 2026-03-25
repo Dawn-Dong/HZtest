@@ -1,6 +1,7 @@
 ﻿using System.Windows.Controls;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using HZtest.Services.ResultModel;
 
 namespace HZtest.Interfaces_接口定义
 {
@@ -22,6 +23,12 @@ namespace HZtest.Interfaces_接口定义
         /// <summary>
         /// 显示对话框并返回结果
         /// </summary>
-        Task<TResult> ShowDialogAsync<TResult>(string dialogName, object parameter = null);
+        Task<DialogResult<TResult>> ShowDialogAsync<TResult>(
+              string dialogName,
+              object parameter = null,
+              bool allowMultiLayer = false);
+
+        int DialogCount { get; }
+        IEnumerable<string> GetDialogStackInfo();
     }
 }
