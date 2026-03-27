@@ -3,10 +3,17 @@ using HZtest.Interfaces_接口定义;
 using HZtest.Models;
 using HZtest.Models.Response;
 using HZtest.Services;
+using SqlSugar;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace HZtest.ViewModels
 {
@@ -17,6 +24,12 @@ namespace HZtest.ViewModels
     {
         // ===== 依赖服务（构造函数注入）=====
         private readonly DeviceService _deviceService;
+        private readonly SqlSugarClient _Db;
+        private readonly IStructuredLogger _logger;
+
+        // 定义颜色转换帮助方法
+        private static Brush HexToBrush(string hex) =>
+            new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
 
         private List<DeviceAlarmInforResponse> _deviceAlarmInforOldList = new List<DeviceAlarmInforResponse>();
 
@@ -24,26 +37,28 @@ namespace HZtest.ViewModels
         private CancellationTokenSource _cts;
 
         // ===== UI属性 =====
-        private string _alertMessage;
-        private bool _isMarqueeEnabled = true;
-        public string AlertMessageText
+        // 用于绑定到 TextBlock.Inlines 的集合
+        public ObservableCollection<Inline> AlertInlines { get; } = new();
+        // 可选：保留纯文本版本用于其他用途
+        private string _alarmMessageText;
+        public string AlarmMessageText
         {
-            get => _alertMessage;
-            set
-            {
-                _alertMessage = value;
-                OnPropertyChanged();
-            }
+            get => _alarmMessageText;
+            set { _alarmMessageText = value; OnPropertyChanged(); }
         }
+
+        private bool _isMarqueeEnabled = true;
         public bool IsMarqueeEnabled
         {
             get => _isMarqueeEnabled;
             set { _isMarqueeEnabled = value; OnPropertyChanged(); }
         }
 
-        public MainWindowViewModel(DeviceService deviceService)
+        public MainWindowViewModel(DeviceService deviceService, SqlSugarClient db, IStructuredLogger logger)
         {
             _deviceService = deviceService ?? throw new ArgumentNullException(nameof(deviceService));
+            _Db = db ?? throw new ArgumentNullException(nameof(db));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
@@ -81,6 +96,8 @@ namespace HZtest.ViewModels
             {
                 // 记录日志（在ViewModel中不应弹出MessageBox）
                 System.Diagnostics.Debug.WriteLine($"监控错误: {ex.Message}");
+                _logger.Error("MainWindowViewModel", $"监控错误: {ex.Message}", ex);
+
             }
         }
         /// <summary>
@@ -89,61 +106,157 @@ namespace HZtest.ViewModels
         /// <returns></returns>
         private async Task GetDeviceAlarmInfor()
         {
-
-            var deviceAlarmInfor = await _deviceService.GetDeviceAlarmInforAsync();
-            if (deviceAlarmInfor.Value.Count == 0)
+            try
             {
-                return;
-            }
-
-            var vd = ReadFromCsv("D:\\Data/AlarmInfo.csv");
-            if (deviceAlarmInfor.Code == 0)
-            {
-                var alarmCompareResult = CompareAlarms(_deviceAlarmInforOldList, deviceAlarmInfor.Value);
-                if (!alarmCompareResult.HasChanged)
+                var deviceAlarmInfor = await _deviceService.GetDeviceAlarmInforAsync();
+                if (deviceAlarmInfor.Code != 0 || deviceAlarmInfor.Value.Count == 0)
                 {
+                    AlertInlines.Clear();
                     return;
                 }
-                StringBuilder loopDisplay = new StringBuilder();
-                var alarmTotalCount = deviceAlarmInfor.Value.Count;
+
+
+                //var vd = ReadFromCsv("D:\\Data/AlarmInfo.csv");
+
+                var alarmCompareResult = CompareAlarms(_deviceAlarmInforOldList, deviceAlarmInfor.Value);
+                if (!alarmCompareResult.HasChanged)
+                    return;
+
+                var AlarmManagementConfigList = await _Db.QueryableWithAttr<AlarmManagementConfigModel>().ToListAsync();
+                var displayItems = new List<AlarmDisplayItem>();
+                int totalCount = deviceAlarmInfor.Value.Count;
+               // StringBuilder loopDisplay = new StringBuilder();
+                //组织报警信息显示文本
                 for (int i = 0; i < deviceAlarmInfor.Value.Count; i++)
                 {
-                    loopDisplay.Append($"({i + 1}/{alarmTotalCount}) {deviceAlarmInfor.Value[i].Text}      ");
+                    var alarm = deviceAlarmInfor.Value[i];
+                    var (alarmType, alarmLevel, isAutoParsing) = await AnalyzeAlarmCodeAsync(alarm.Number, AlarmManagementConfigList);
+                    // 添加到显示
+                    displayItems.Add(new AlarmDisplayItem
+                    {
+                        Text = $"({i + 1}/{totalCount}) {alarm.Text}",
+                        Level = alarmLevel,
+                        IsAutoParsing = isAutoParsing
+                    });
+                   // loopDisplay.Append($"({i + 1}/{totalCount}) {deviceAlarmInfor.Value[i].Text}      ");
+
                 }
-                AlertMessageText = loopDisplay.ToString();
+                //AlarmMessageText = loopDisplay.ToString();
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    // 挂起 dispatcher 处理，批量更新完成后再恢复
+                    using (Dispatcher.CurrentDispatcher.DisableProcessing())
+                    {
+                        AlertInlines.Clear();
+                        foreach (var item in displayItems)
+                        {
+                            // 添加报警文本
+                            AlertInlines.Add(new Run(item.Text)
+                            {
+                                Foreground = new SolidColorBrush(item.LevelColor),
+                                FontSize = 14,
+                                FontWeight = FontWeights.Bold,
+                                BaselineAlignment = BaselineAlignment.Center
+                            });
+
+                            AlertInlines.Add(new Run(item.SourceTag)
+                            {
+                                Foreground = HexToBrush(item.SourceColor),
+                                FontSize = 10,
+                                BaselineAlignment = BaselineAlignment.Center
+                            });
+
+                            // 添加分隔符
+                            AlertInlines.Add(new Run("    ")
+                            {
+                                Foreground = Brushes.Gray,
+                                FontSize = 14
+                            });
+                        }
+                    }
+                });
+
+
                 var alarmInfos = new List<AlarmInfoModels>();
                 var alarmTime = DateTime.Now;
                 foreach (var alarm in alarmCompareResult.Added)
                 {
-                    var (alarmType, alarmLevel) = await AnalyzeAlarmCodeAsync(alarm.Number);
+
+                    var (alarmType, alarmLevel, isAutoPasing) = await AnalyzeAlarmCodeAsync(alarm.Number, AlarmManagementConfigList);
                     alarmInfos.Add(new AlarmInfoModels
                     {
+                        Id = SnowFlakeSingle.Instance.NextId(),
                         AlarmCode = alarm.Number,
                         AlarmType = alarmType,
                         AlarmLevel = alarmLevel,
                         AlarmTime = alarmTime,
                         AlarmContent = alarm.Text,
+                        IsAutoPasing = isAutoPasing,
+                        CreateTime = alarmTime
                     });
                 }
-                if (AppendToCsv(alarmInfos, "D:\\Data/AlarmInfo.csv"))
+
+
+                var result = await _Db.InsertableWithAttr(alarmInfos).ExecuteCommandAsync();
+
+                // 保存到数据库
+                if (result > 0)
                 {
                     _deviceAlarmInforOldList = deviceAlarmInfor.Value;
                 }
             }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"获取报警信息错误: {ex.Message}");
+                _logger.Error("MainWindowViewModel", $"获取报警信息错误: {ex.Message}", ex);
+            }
+
+            //if (AppendToCsv(alarmInfos, "D:\\Data/AlarmInfo.csv"))
+            //{
+            //    _deviceAlarmInforOldList = deviceAlarmInfor.Value;
+            //}
+
         }
-        private async Task<(AlarmTypeEnum alarmType, AlarmLevelEnum alarmLevel)> AnalyzeAlarmCodeAsync(string alarmCode)
+        /// <summary>
+        /// 报警级别解析分为自动根据华中给的规则解析和根据配置的规则解析
+        /// </summary>
+        /// <param name="alarmCode"></param>
+        /// <returns></returns>
+        private async Task<(AlarmTypeEnum alarmType, AlarmLevelEnum alarmLevel, bool isAutoPasing)> AnalyzeAlarmCodeAsync(string alarmCode, List<AlarmManagementConfigModel> alarmManagementConfigList)
         {
-            // 解析报警代码的逻辑
-            char codeType = alarmCode[0]; // 获取报警代码的第一个字符 AlarmTypeEnum
-            char codeLevel = alarmCode[1]; // 获取报警代码的第二个字符 AlarmLevelEnum
-            int type = int.Parse(codeType.ToString());
-            int level = int.Parse(codeLevel.ToString());
-            await Task.Delay(100); // 模拟异步操作
 
-            return ((AlarmTypeEnum)type, (AlarmLevelEnum)level);
+            var alarmConfig = alarmManagementConfigList.Where(a => a.AlarmCode == alarmCode).FirstOrDefault();
+
+            var alarmLevel = AlarmLevelEnum.Error;
+
+            char codeType = alarmCode[0]; // 获取报警代码的第一个字符 AlarmTypeEnum
+            var alarmType = (AlarmTypeEnum)int.Parse(codeType.ToString());
+            await Task.Delay(100); // 模拟异步操作
+            if (alarmConfig != null)
+            {
+                alarmLevel = alarmConfig.AlarmLevel;
+                return (alarmType, alarmLevel, true);
+            }
+            else
+            {
+                // 如果没有配置，则根据华中给的规则解析
+                if (alarmCode.Length >= 2)
+                {
+
+                    char codeLevel = alarmCode[1]; // 获取报警代码的第二个字符 AlarmLevelEnum
+
+                    alarmLevel = (AlarmLevelEnum)int.Parse(codeLevel.ToString());
+                    return (alarmType, alarmLevel, false);
+                }
+                else
+                {
+                    // 无法解析，返回默认值
+                    return (AlarmTypeEnum.Error, AlarmLevelEnum.Error, false);
+                }
+            }
 
         }
-
+        #region 废弃改为用SQLite数据库存储报警信息
         /// <summary>
         /// 数据保存为CSV文件
         /// </summary>
@@ -274,6 +387,8 @@ namespace HZtest.ViewModels
             result.Add(current.ToString());
             return result.ToArray();
         }
+
+        #endregion
 
         /// <summary>
         /// 对比两组报警数据

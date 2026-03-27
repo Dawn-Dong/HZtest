@@ -183,6 +183,7 @@ namespace HZtest
                 var db = SqlSugarSetup.CreateClient(Configuration);
                 // 手动自动建表（根据特性自动找到对应数据库） 后续可以修改为更自动的方式，例如扫描程序集中的所有模型类进行创建
                 db.CodeFirst.InitTables(typeof(AlarmManagementConfigModel));
+                db.CodeFirst.InitTables(typeof(AlarmInfoModels));
 
                 services.AddSingleton(db);  // 注入多租户客户端
 

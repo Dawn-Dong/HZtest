@@ -4,7 +4,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace HZtest.Infrastructure_基础设施
+namespace HZtest.AdditionalUIAttributes_附加UI属性.ViewHelper
 {
     public static class TreeViewHelper
     {

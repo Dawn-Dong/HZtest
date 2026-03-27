@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:HZtest"
-        xmlns:behaviors="clr-namespace:HZtest.AdditionalUIAttributes_附加UI属性"
+        xmlns:helpers="clr-namespace:HZtest.AdditionalUIAttributes_附加UI属性.ViewHelper"
         mc:Ignorable="d"
         Title="华中数控" Height="600" Width="990"
         MinHeight="550"
@@ -50,14 +50,14 @@
 
             <TextBlock x:Name="StatusTextBlock"  Grid.Column="0" FontSize="16" FontWeight="Bold"  />
 
-            <Border Grid.Column="1"  >
+            <!--<Border Grid.Column="1"  >
                 <Canvas  ClipToBounds="True">
                     <TextBlock
-                           Text="{Binding AlertMessageText}" 
+                           Text="{Binding AlarmMessageText}" 
                            FontSize="14" 
                            FontWeight="Bold"
-                           behaviors:MainWindowMarqueeHelper.IsMarquee="{Binding IsMarqueeEnabled}"
-                           behaviors:MainWindowMarqueeHelper.Speed="70"
+                           helpers:MainWindowMarqueeHelper.IsMarquee="{Binding IsMarqueeEnabled}"
+                           helpers:MainWindowMarqueeHelper.Speed="70"
                         >
 
                         <TextBlock.Foreground>
@@ -67,6 +67,29 @@
                                 <GradientStop Color="#FF510311" Offset="1"/>
                             </LinearGradientBrush>
                         </TextBlock.Foreground>
+                    </TextBlock>
+                </Canvas>
+            </Border>-->
+            <Border Grid.Column="1">
+                <Canvas ClipToBounds="True" x:Name="MarqueeCanvas">
+                    <TextBlock x:Name="AlertTextBlock"
+                   helpers:MainWindowMarqueeHelper.IsMarquee="{Binding IsMarqueeEnabled}"
+                   helpers:MainWindowMarqueeHelper.Speed="50"
+                   helpers:InlineBindingHelper.InlinesSource="{Binding AlertInlines}"
+                   Canvas.Left="0"
+                   Canvas.Top="0"           
+                   CacheMode="BitmapCache"
+                   RenderOptions.BitmapScalingMode="LowQuality"
+                   TextOptions.TextFormattingMode="Display"
+                   TextOptions.TextHintingMode="Animated"
+                   UseLayoutRounding="True"
+                   SnapsToDevicePixels="True">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="FontSize" Value="14"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </Style>
+                        </TextBlock.Style>
                     </TextBlock>
                 </Canvas>
             </Border>

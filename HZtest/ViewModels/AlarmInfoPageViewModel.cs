@@ -1,8 +1,10 @@
 ﻿using HZtest.Infrastructure_基础设施;
 using HZtest.Interfaces_接口定义;
+using HZtest.Models;
 using HZtest.Models.Request;
 using HZtest.Models.Response;
 using HZtest.Services;
+using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -19,6 +21,8 @@ namespace HZtest.ViewModels
         private readonly IDialogService _dialogService;
         private readonly DeviceService _deviceService;
         private readonly IMessageService _message_service;
+        private readonly SqlSugarClient _Db;
+        private readonly IStructuredLogger _logger;
 
 
         // 取消令牌（用于停止监控）
@@ -30,8 +34,8 @@ namespace HZtest.ViewModels
         public ICommand ConfigAlarmInfoCommand { get; }
 
         //Ui属性
-        private List<DeviceAlarmInforResponse> _alarmInfoList = new List<DeviceAlarmInforResponse>();
-        public List<DeviceAlarmInforResponse> AlarmInfoList
+        private List<AlarmInfoModels> _alarmInfoList = new List<AlarmInfoModels>();
+        public List<AlarmInfoModels> AlarmInfoList
         {
             get => _alarmInfoList;
             set
@@ -51,11 +55,13 @@ namespace HZtest.ViewModels
         }
 
 
-        public AlarmInfoPageViewModel(DeviceService deviceService, IMessageService messageService, IDialogService dialogService)
+        public AlarmInfoPageViewModel(DeviceService deviceService, IMessageService messageService, IDialogService dialogService, SqlSugarClient db, IStructuredLogger logger)
         {
             _deviceService = deviceService ?? throw new ArgumentNullException(nameof(deviceService));
             _message_service = messageService ?? throw new ArgumentNullException(nameof(messageService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _Db = db ?? throw new ArgumentNullException(nameof(db));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             RefreshAlarmInfoCommand = new RelayCommand(GetAlarmInfoAsync);
             ConfigAlarmInfoCommand = new AsyncRelayCommand(ConfigAlarmInfoDialogsAsync);
             GetAlarmInfoAsync();
@@ -71,10 +77,11 @@ namespace HZtest.ViewModels
                 {
                     //之类不能插入数据只能查询数据
                     IsLoading = true;
-                    var alarmInfo = await _deviceService.GetDeviceAlarmInforAsync();
-
+                    //不通过接口查询设备而是直接从数据库获取数据
+                    // var alarmInfo = await _deviceService.GetDeviceAlarmInforAsync();
+                    var alarmInfoList = await _Db.QueryableWithAttr<AlarmInfoModels>().ToListAsync();
                     await Task.Delay(1000);
-                    AlarmInfoList = alarmInfo.Value;
+                    AlarmInfoList = alarmInfoList;
                     IsLoading = false;
                     //AlarmInfoList = new List<DeviceAlarmInforResponse>();
 
@@ -96,11 +103,8 @@ namespace HZtest.ViewModels
             {
                 //后弹出子对话框输入名称和选择本地文件
                 var fileUploadRequest = await _dialogService.ShowDialogAsync<bool?>("ConfigAlarmInfoLevel", allowMultiLayer: true);
-
-
-
-
             }
+
             catch (Exception ex)
             {
                 _message_service.ShowError($"对话框异常: {ex.Message}");

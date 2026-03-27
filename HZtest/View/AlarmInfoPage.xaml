@@ -52,11 +52,14 @@
                 HorizontalAlignment="Center" 
                 VerticalAlignment="Center" 
                 Command="{Binding ConfigAlarmInfoCommand}"/>
-            
+
         </Grid>
 
         <!-- 数据展示区域 -->
-        <Grid Grid.Row="1" Grid.ColumnSpan="2" Background="#FF838383">
+        <Grid Grid.Row="1" Grid.ColumnSpan="2">
+            <Grid.Background>
+                <SolidColorBrush Color="#FF171717" />
+            </Grid.Background>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <!-- 表头行 -->
@@ -128,7 +131,19 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <TextBlock Text="{Binding Number}" 
+                            <TextBlock 
+                                       Grid.Column="0"
+                                       Text="{Binding AlarmCode}" 
+                                       Margin="12,8" 
+                                       Foreground="White"
+                                       FontFamily="Consolas"
+                                       TextTrimming="CharacterEllipsis"
+                                       FontSize="13"
+                                       HorizontalAlignment="Center" 
+                                       VerticalAlignment="Center"/>
+                            <TextBlock 
+                                       Grid.Column="1"
+                                       Text="{Binding AlarmType}" 
                                        Margin="12,8" 
                                        Foreground="White"
                                        FontFamily="Consolas"
@@ -137,11 +152,31 @@
                                        HorizontalAlignment="Center" 
                                        VerticalAlignment="Center"/>
 
-
-                            <TextBlock Grid.Column="5" 
-                                       Text="{Binding Text}" 
+                            <TextBlock 
+                                       Grid.Column="2"
+                                       Text="{Binding AlarmLevel}" 
                                        Margin="12,8" 
-                                       Foreground="LightCoral"
+                                       Foreground="White"
+                                       FontFamily="Consolas"
+                                       TextTrimming="CharacterEllipsis"
+                                       FontSize="13"
+                                       HorizontalAlignment="Center" 
+                                       VerticalAlignment="Center"/>
+
+                            <TextBlock 
+                                       Grid.Column="3"
+                                       Text="{Binding AlarmTime}" 
+                                       Margin="12,8" 
+                                       Foreground="White"
+                                       FontFamily="Consolas"
+                                       TextTrimming="CharacterEllipsis"
+                                       FontSize="13"
+                                       HorizontalAlignment="Center" 
+                                       VerticalAlignment="Center"/>
+                            
+                            <TextBlock Grid.Column="4" 
+                                       Text="{Binding AlarmContent}" 
+                                       Margin="12,8" 
                                        TextTrimming="CharacterEllipsis"
                                        FontSize="14"
                                        HorizontalAlignment="Center" 
