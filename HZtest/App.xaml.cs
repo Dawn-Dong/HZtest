@@ -1,6 +1,6 @@
 ﻿using HZtest.Infrastructure_基础设施;
 using HZtest.Interfaces_接口定义;
-using HZtest.Models;
+using HZtest.Models.DB;
 using HZtest.Services;
 using HZtest.Universal;
 using HZtest.View;
@@ -104,6 +104,7 @@ namespace HZtest
             services.AddTransient<UserVariablesViewModel>();
             services.AddTransient<RelativeCoordinateSystemViewMode>();
             services.AddTransient<RegisterOperationViewModel>();
+            services.AddTransient<OrderManagementPageViewModel>();
 
 
             // ViewModels Dialogs的 
@@ -111,6 +112,7 @@ namespace HZtest
             services.AddTransient<ModeSelectionViewModel>();
             services.AddTransient<ConfigAlarmInfoLevelViewModel>();
             services.AddTransient<AddOrUpdateAlarmInfoLevelViewModel>();
+            services.AddTransient<AddOrUpdateOrderViewModel>();
 
             // Views
             services.AddTransient<MainWindow>();
@@ -122,12 +124,14 @@ namespace HZtest
             services.AddTransient<UserVariablesPage>();
             services.AddTransient<RelativeCoordinateSystemPage>();
             services.AddTransient<RegisterOperationPage>();
+            services.AddTransient<OrderManagementPage>();
 
             // VIews Dialogs的
             services.AddTransient<ModeSelectionDialog>();
             services.AddTransient<UploadFileDialogs>();
             services.AddTransient<ConfigAlarmInfoLevelDialogs>();
             services.AddTransient<AddOrUpdateAlarmInfoLevelDialogs>();
+            services.AddTransient<AddOrUpdateOrderDialogs>();
 
 
             // ApiClient: 使用 Typed Client，通过配置设置 BaseAddress；SetHandlerLifetime 控制 handler 重用周期
@@ -184,6 +188,7 @@ namespace HZtest
                 // 手动自动建表（根据特性自动找到对应数据库） 后续可以修改为更自动的方式，例如扫描程序集中的所有模型类进行创建
                 db.CodeFirst.InitTables(typeof(AlarmManagementConfigModel));
                 db.CodeFirst.InitTables(typeof(AlarmInfoModels));
+                db.CodeFirst.InitTables(typeof(OrderManagementModel));
 
                 services.AddSingleton(db);  // 注入多租户客户端
 

@@ -355,6 +355,7 @@ namespace HZtest.Services
                 "UploadFile" => _serviceProvider.GetRequiredService<UploadFileDialogs>(),
                 "ConfigAlarmInfoLevel" => _serviceProvider.GetRequiredService<ConfigAlarmInfoLevelDialogs>(),
                 "AddOrUpdateAlarmInfoLevel" => _serviceProvider.GetRequiredService<AddOrUpdateAlarmInfoLevelDialogs>(),
+                "AddOrUpdateOrder" => _serviceProvider.GetRequiredService<AddOrUpdateOrderDialogs>(),
                 _ => throw new ArgumentException($"未知对话框: {name}")
             };
         }

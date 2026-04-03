@@ -120,8 +120,18 @@
                                      Converter={StaticResource CountToVis}, 
                                      ConverterParameter='>0'}" 
                 VirtualizingPanel.IsVirtualizing="True">
+                <!-- 关键：开启纵向滚动 -->
+                <ItemsControl.Template>
+                    <ControlTemplate TargetType="ItemsControl">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                          HorizontalScrollBarVisibility="Disabled"
+                          CanContentScroll="True">
+                            <ItemsPresenter/>
+                        </ScrollViewer>
+                    </ControlTemplate>
+                </ItemsControl.Template>
                 <ItemsControl.ItemTemplate>
-                    <DataTemplate>
+                    <!--<DataTemplate>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -131,7 +141,8 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <TextBlock 
+                            -->
+                    <!--<TextBlock 
                                        Grid.Column="0"
                                        Text="{Binding AlarmCode}" 
                                        Margin="12,8" 
@@ -180,7 +191,169 @@
                                        TextTrimming="CharacterEllipsis"
                                        FontSize="14"
                                        HorizontalAlignment="Center" 
+                                       VerticalAlignment="Center"/>-->
+                    <!--
+                            
+                            
+                        </Grid>
+                    </DataTemplate>-->
+
+                    <DataTemplate>
+                        <Grid>
+                            <!-- 列定义 -->
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- ============================================ -->
+                            <!-- 关键：行的背景色根据 AlarmLevel 变化 -->
+                            <!-- ============================================ -->
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <!-- 默认背景：透明 -->
+                                    <Setter Property="Background" Value="Transparent"/>
+
+                                    <!-- 触发器：根据 AlarmLevel 的值改变背景 -->
+                                    <Style.Triggers>
+
+                                        <!-- ErrorLevel = 浅红色背景 -->
+                                        <DataTrigger Binding="{Binding AlarmLevel}" Value="ErrorLevel">
+                                            <Setter Property="Background" Value="#33FF6B6B"/>
+                                        </DataTrigger>
+
+                                        <!-- MessageLevel = 浅橙色背景 -->
+                                        <DataTrigger Binding="{Binding AlarmLevel}" Value="MessageLevel">
+                                            <Setter Property="Background" Value="#33FFA500"/>
+                                        </DataTrigger>
+
+                                        <!-- 可以扩展其他级别 -->
+                                        <DataTrigger Binding="{Binding AlarmLevel}" Value="WarningLevel">
+                                            <Setter Property="Background" Value="#33FFFF00"/>
+                                        </DataTrigger>
+
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+
+                            <!-- 第0列：报警代码 -->
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding AlarmCode}" 
+                                       Margin="12,8" 
+                                       Foreground="White"
+                                       FontFamily="Consolas"
+                                       TextTrimming="CharacterEllipsis"
+                                       FontSize="13"
+                                       HorizontalAlignment="Center" 
                                        VerticalAlignment="Center"/>
+
+                            <!-- 第1列：报警类型 -->
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding AlarmType}" 
+                                       Margin="12,8" 
+                                       Foreground="White"
+                                       FontFamily="Consolas"
+                                       TextTrimming="CharacterEllipsis"
+                                       FontSize="13"
+                                       HorizontalAlignment="Center" 
+                                       VerticalAlignment="Center"/>
+
+                            <!-- ============================================ -->
+                            <!-- 第2列：报警级别（文字也变色） -->
+                            <!-- ============================================ -->
+                            <TextBlock Grid.Column="2"
+                                       Margin="12,8" 
+                                       FontFamily="Consolas"
+                                       FontSize="13"
+                                       HorizontalAlignment="Center" 
+                                       VerticalAlignment="Center">  
+    
+                                <!-- 报警级别 -->
+                                <Run Text="{Binding AlarmLevel}">
+                                    <Run.Style>
+                                        <Style TargetType="Run">
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding AlarmLevel}" Value="ErrorLevel">
+                                                    <Setter Property="Foreground" Value="#FFFF4444"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding AlarmLevel}" Value="MessageLevel">
+                                                    <Setter Property="Foreground" Value="#FFFFA500"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Run.Style>
+                                </Run>
+    
+                                <!-- 自动/手动标记 -->
+                                <Run>
+                                    <Run.Style>
+                                        <Style TargetType="Run">
+                                            <Setter Property="FontSize" Value="10"/>
+                                            <Style.Triggers>
+                                                <!-- True = 自动（蓝色背景+白色字） -->
+                                                <DataTrigger Binding="{Binding IsAutoPasing}" Value="True">
+                                                    <Setter Property="Text" Value=" 自动 "/>
+                                                    <Setter Property="Foreground" Value="Green"/>
+                                                </DataTrigger>
+                                                <!-- False = 手动（紫色背景+白色字） -->
+                                                <DataTrigger Binding="{Binding IsAutoPasing}" Value="False">
+                                                    <Setter Property="Text" Value=" 手动 "/>
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Run.Style>
+                                </Run>
+                            </TextBlock>
+
+
+                            <!-- 第3列：报警时间 -->
+                            <TextBlock Grid.Column="3"
+                                   Text="{Binding AlarmTime}" 
+                                   Margin="12,8" 
+                                   Foreground="White"
+                                   FontFamily="Consolas"
+                                   TextTrimming="CharacterEllipsis"
+                                   FontSize="13"
+                                   HorizontalAlignment="Center" 
+                                   VerticalAlignment="Center"/>
+
+                            <!-- ============================================ -->
+                            <!-- 第4列：报警内容（文字变色） -->
+                            <!-- ============================================ -->
+                            <TextBlock Grid.Column="4"
+                               Text="{Binding AlarmContent}" 
+                               Margin="12,8" 
+                               TextTrimming="CharacterEllipsis"
+                               FontSize="14"
+                               HorizontalAlignment="Center" 
+                               VerticalAlignment="Center">
+                                <TextBlock.ToolTip>
+                                    <ToolTip Content="{Binding AlarmContent}" MaxWidth="400"/>
+                                </TextBlock.ToolTip>
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <!-- 默认：白色文字 -->
+                                        <Setter Property="Foreground" Value="White"/>
+
+                                        <Style.Triggers>
+                                            <!-- ErrorLevel = 浅红色文字 -->
+                                            <DataTrigger Binding="{Binding AlarmLevel}" Value="ErrorLevel">
+                                                <Setter Property="Foreground" Value="#FFFF6B6B"/>
+                                            </DataTrigger>
+
+                                            <!-- MessageLevel = 橙色文字 -->
+                                            <DataTrigger Binding="{Binding AlarmLevel}" Value="MessageLevel">
+                                                <Setter Property="Foreground" Value="#FFFFA500"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

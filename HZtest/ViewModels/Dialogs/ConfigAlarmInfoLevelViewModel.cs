@@ -1,5 +1,5 @@
 ﻿using HZtest.Interfaces_接口定义;
-using HZtest.Models;
+using HZtest.Models.DB;
 using HZtest.Models.Request;
 using HZtest.Services;
 using SqlSugar;
@@ -100,6 +100,7 @@ namespace HZtest.ViewModels.Dialogs
             SearchCommand = new AsyncRelayCommand(Search);
             AddCommand = new AsyncRelayCommand(AddAlarmConfig);
             EditCommand = new AsyncRelayCommand<AlarmManagementConfigModel>(EditAlarmConfig);
+            DeleteCommand = new AsyncRelayCommand<AlarmManagementConfigModel>(DeleteAlarmConfig);
         }
 
 
@@ -179,6 +180,38 @@ namespace HZtest.ViewModels.Dialogs
             {
                 _logger.Error("编辑报警配置失败", ex);
                 _message_service.ShowMessage($"编辑报警配置失败:{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 删除报警配置
+        /// </summary>
+        /// <param name="config"></param>
+        /// <returns></returns>
+        private async Task DeleteAlarmConfig(AlarmManagementConfigModel config)
+        {
+            try
+            {
+                var result = await _db.DeleteableWithAttr<AlarmManagementConfigModel>()
+                            .Where(x => x.Id == config.Id)
+                            .ExecuteCommandAsync();
+                if (result > 0)
+                {
+                    _logger.Info($"删除报警配置成功:{config}");
+                    _message_service.ShowMessage($"删除报警配置成功");
+                }
+                else
+                {
+                    _logger.Info($"删除报警配置失败:{config}");
+                    _message_service.ShowError($"删除报警配置失败");
+                }
+
+                await QueryAlarmConfigLevel();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("编辑报警配置失败", ex);
+                _message_service.ShowError($"编辑报警配置失败:{ex.Message}");
             }
         }
 

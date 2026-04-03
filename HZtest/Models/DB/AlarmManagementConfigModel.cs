@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace HZtest.Models
+namespace HZtest.Models.DB
 {
     /// <summary>
     /// 报警管理配置模型 - 用于存储报警管理相关的配置信息

@@ -1,6 +1,7 @@
 ﻿using HZtest.Converters;
 using HZtest.Interfaces_接口定义;
 using HZtest.Models;
+using HZtest.Models.DB;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
@@ -72,7 +73,7 @@ namespace HZtest.ViewModels.Dialogs
             set { _alarmLevel = value; OnPropertyChanged(); }
         }
 
-        public string ConfirmButtonContent => AlarmManagementConfig == null ? "新增" : "更新"; // 根据ID判断是新增还是更新
+        public string ConfirmButtonContent => AlarmManagementConfig == null ? "新增" : "更新"; // 根据是否空判断是新增还是更新
 
 
         #endregion

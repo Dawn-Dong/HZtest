@@ -15,15 +15,14 @@ using System.Windows.Shapes;
 namespace HZtest.View
 {
     /// <summary>
-    /// ToolInfoPage.xaml 的交互逻辑
+    /// OrderMaagementPage.xaml 的交互逻辑
     /// </summary>
-    public partial class ToolInfoPage : Page
+    public partial class OrderManagementPage : Page
     {
-        public ToolInfoPage(ToolInfoViewModel viewModel)
+        public OrderManagementPage(OrderManagementPageViewModel viewModel)
         {
             InitializeComponent();
-            DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+            DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel)); 
         }
-
     }
 }

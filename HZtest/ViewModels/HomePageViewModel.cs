@@ -292,6 +292,18 @@ namespace HZtest.ViewModels
             }
         }
 
+        private bool _isEmergencyStopped = false;
+
+        public bool IsEmergencyStopped
+        {
+            get => _isEmergencyStopped;
+            set
+            {
+                _isEmergencyStopped = value;
+                OnPropertyChanged(); // 通知UI更新
+            }
+        }
+
         #endregion
 
 
@@ -310,9 +322,9 @@ namespace HZtest.ViewModels
                     await GetActualSpindleSpeedAsync();
                     await GetOperationModeAsync();
                     await GetDeviceStateAsync();
-
+                    await GetEmergencyStopAsync();
                     // 3. 等待（避免CPU占用过高）
-                    await Task.Delay(100, _cts.Token);
+                    await Task.Delay(500, _cts.Token);
                 }
             }
             catch (OperationCanceledException)
@@ -364,6 +376,9 @@ namespace HZtest.ViewModels
         private async Task ExecutePauseAsync()
         {
 
+            _message_service.ShowError($"设置失败：远程暂停功能未开放使用 ");
+            return;
+
             if (OperationMode.GetEnumFromDescription<DevOperationModeEnum>() != DevOperationModeEnum.Auto)
             {
                 _message_service.ShowError($"请在自动模式下操作");
@@ -385,6 +400,9 @@ namespace HZtest.ViewModels
             {
                 _message_service.ShowError($"设置失败：{stopState.Status}");
             }
+
+
+
             //暂不进行消息提示  方案参考 消息服务
 
         }
@@ -435,7 +453,7 @@ namespace HZtest.ViewModels
                 if (result.Success)
                 {
                     // 用户点击了确定
-                    CurrentModeValue = result.Data ?? 1 ; // 更新本地状态
+                    CurrentModeValue = result.Data ?? 1; // 更新本地状态
                     var setResult = await _deviceService.SetOperationModeAsync((DevOperationModeEnum)CurrentModeValue);
                     if (setResult.Code == 0)
                     {
@@ -531,6 +549,15 @@ namespace HZtest.ViewModels
             DeviceStateText = deviceState.Value.GetDescription();
         }
 
+        /// <summary>
+        /// 获取急停状态
+        /// </summary>
+        /// <returns></returns>
+        private async Task GetEmergencyStopAsync()
+        {
+            var emergencyStopState = await _deviceService.GetEmergencyStopStateAsync();
+            IsEmergencyStopped = emergencyStopState.Value;
+        }
 
         #endregion
 
@@ -544,9 +571,6 @@ namespace HZtest.ViewModels
         {
             return value / 100000;
         }
-
-
-
 
     }
 }

@@ -228,7 +228,7 @@ namespace HZtest
 
         }
         /// <summary>
-        ///  点击 “绝对坐标系” 按钮时在右侧 Frame 显示 AbsoluteCoordinateSystemPage
+        ///  点击 “绝对坐标系” 按钮时在右侧 Frame 显示 RegisterOperationPage
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -248,7 +248,32 @@ namespace HZtest
             SelectButton(RegisterOperationButton);
         }
 
+        /// <summary>
+        ///  点击 “订单管理” 按钮时在右侧 Frame 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OrderManagementButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(OperatingEQPSNCode))
+            {
+                MessageBox.Show("请先确保设备链接成功在操作！", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            var OrderManagementPage = App.Services.GetService<OrderManagementPage>();
+            if (OrderManagementPage.DataContext is OrderManagementPageViewModel viewModel)
+            {
+                //viewModel.Initialize();
+            }
+            MainFrame.Content = OrderManagementPage;
+            SelectButton(OrderManagementButton);
+        }
 
+
+        /// <summary>
+        /// 将对应的按钮设置选中样式；同时重置之前选中按钮的样式
+        /// </summary>
+        /// <param name="button">按钮</param>
         private void SelectButton(Button button)
         {
             // 重置之前按钮

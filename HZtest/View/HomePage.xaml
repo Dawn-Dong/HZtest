@@ -111,19 +111,48 @@
             <TextBlock Grid.Row="0" Grid.Column="0"  Grid.ColumnSpan="2"  Text="{Binding MainAxisSpeedDisplay}" Foreground="Black" FontSize="30"   TextAlignment="Left" VerticalAlignment="Center" HorizontalAlignment="Left"  ></TextBlock>
             <!--复位图标按钮在右上方-->
             <!-- 图标按钮（无边框/背景，悬停有反馈） -->
-            <Button Grid.Row="0" Grid.Column="1" 
+
+            <StackPanel Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right"  VerticalAlignment="Top"  Orientation="Horizontal">
+
+                <Button 
+                    Style="{StaticResource IconButtonStyle}"
+                    ToolTip="急停状态(无法设置)"
+                    Margin="10,5,5,0" RenderTransformOrigin="0.508,0.514"
+                    Width="24" Height="24">
+                    <Viewbox Width="24" Height="24">
+                        <Path Data="{StaticResource E-Stop}">
+                            <Path.Style>
+                                <Style TargetType="Path">
+                                    <!-- 默认颜色（false 状态） -->
+                                    <Setter Property="Fill" Value="#3e0505"/>
+
+                                    <!-- true 时变红色 -->
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEmergencyStopped}" Value="True">
+                                            <Setter Property="Fill" Value="Red"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Path.Style>
+                        </Path>
+
+                    </Viewbox>
+                </Button>
+                <Button 
                     Command="{Binding ResetCommand}"
                     Style="{StaticResource IconButtonStyle}"
                     ToolTip="设备复位"
                     Margin="10,5,5,0" RenderTransformOrigin="0.508,0.514"
                     Width="24" Height="24"
-                    HorizontalAlignment="Right" VerticalAlignment="Top"
                     >
-                <Viewbox Width="24" Height="24">
-                    <Path Data="{StaticResource Reset}" 
+                    <Viewbox Width="24" Height="24">
+                        <Path Data="{StaticResource Reset}" 
                           Fill="{Binding ModeIconColor, FallbackValue=#3e0505}"/>
-                </Viewbox>
-            </Button>
+                    </Viewbox>
+                </Button>
+
+
+            </StackPanel>
 
 
             <!-- 替换原 TextBlock，使用 StackPanel 水平排列 -->
@@ -153,7 +182,7 @@
                 Orientation="Horizontal" 
                 VerticalAlignment="Center" 
                 HorizontalAlignment="Left">
-                                <!-- 文字部分 -->
+                <!-- 文字部分 -->
                 <TextBlock Text="状态：" 
                     Foreground="Black" FontSize="30" 
                     VerticalAlignment="Center"/>

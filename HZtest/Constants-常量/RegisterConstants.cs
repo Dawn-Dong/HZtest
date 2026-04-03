@@ -37,6 +37,11 @@ namespace HZtest.Constants
         /// </summary>
         public const int Reset = 10;
 
+        /// <summary>
+        /// 急停状态偏移
+        /// </summary>
+        public const int E_Stop = 25;
+
 
     }
 

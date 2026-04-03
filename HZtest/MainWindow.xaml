@@ -19,6 +19,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
             <RowDefinition Height="20"/>
         </Grid.RowDefinitions>
 
@@ -28,7 +29,7 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" Background="LightGray" Grid.RowSpan="7" />
+        <Border Grid.Column="0" Background="LightGray" Grid.RowSpan="8" />
         <Button x:Name="HomeButton" Content="主页" Grid.Column="0" Grid.Row="0" Click="HomeButton_Click" Cursor="Hand"/>
         <Button x:Name="FileButton" Content="文件" Grid.Column="0" Grid.Row="1" Click="FileButton_Click" Cursor="Hand"/>
         <Button x:Name="AlarmInfoButton" Content="报警信息" Grid.Column="0" Grid.Row="2" Click="AlarmInfoButton_Click" Cursor="Hand"/>
@@ -36,12 +37,12 @@
         <Button x:Name="UserVariablesButton" Content="用户变量" Grid.Column="0" Grid.Row="4" Click="UserVariablesButton_Click" Cursor="Hand"/>
         <Button x:Name="RelativeCoordinateSystemButton" Content="相对坐标系" Grid.Column="0" Grid.Row="5" Click="RelativeCoordinateSystemButton_Click" Cursor="Hand"/>
         <Button x:Name="RegisterOperationButton" Content="寄存器操作" Grid.Column="0" Grid.Row="6" Click="RegisterOperationButton_Click" Cursor="Hand"/>
+        <Button x:Name="OrderManagementButton" Content="订单管理" Grid.Column="0" Grid.Row="7" Click="OrderManagementButton_Click" Cursor="Hand"/>
 
-
-        <Frame Grid.Column="1"  Grid.RowSpan="7" x:Name="MainFrame" NavigationUIVisibility="Hidden"/>
+        <Frame Grid.Column="1"  Grid.RowSpan="8" x:Name="MainFrame" NavigationUIVisibility="Hidden"/>
 
         <!--增加左右结构 右边做错误信息的跑马灯提示 左边依旧提示当前运行设备-->
-        <Grid Grid.Column="0" Grid.Row="7" Grid.ColumnSpan="2">
+        <Grid Grid.Column="0" Grid.Row="8" Grid.ColumnSpan="2">
 
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>

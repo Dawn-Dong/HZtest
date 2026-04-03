@@ -450,4 +450,36 @@ namespace HZtest.Models
         MessageLevel = 1,
     }
 
+    /// <summary>
+    /// 订单状态枚举
+    /// </summary>
+    public enum OrderStateEnum
+    {
+        /// <summary>
+        /// 未知订单状态
+        /// </summary>
+        [Description("未知订单状态")]
+        Error = -1,
+        /// <summary>
+        /// 待加工
+        /// </summary>
+        [Description("待加工")]
+        Pending = 0,
+        /// <summary>
+        /// 加工中
+        /// </summary>
+        [Description("加工中")]
+        Processing = 1,
+        /// <summary>
+        /// 加工完成
+        /// </summary>
+        [Description("加工完成")]
+        Completed = 2,
+        /// <summary>
+        /// 手动关闭
+        /// </summary>
+        [Description("手动关闭")]
+        Failed = 3,
+    }   
+
 }

@@ -1,6 +1,6 @@
 ﻿using HZtest.Infrastructure_基础设施;
 using HZtest.Interfaces_接口定义;
-using HZtest.Models;
+using HZtest.Models.DB;
 using HZtest.Models.Request;
 using HZtest.Models.Response;
 using HZtest.Services;

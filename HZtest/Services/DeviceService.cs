@@ -1051,6 +1051,51 @@ namespace HZtest.Services
                 };
             }
         }
+
+        /// <summary>
+        /// 获取设备急停信息
+        /// </summary>
+        /// <returns></returns>
+        public async Task<BaseResponse<bool>> GetEmergencyStopStateAsync()
+        {
+            if (string.IsNullOrEmpty(CurrentSNCode))
+            {
+                return new BaseResponse<bool> { Status = "未设置设备 SNCode" };
+            }
+
+            try
+            {
+                var request = new BaseRequest
+                {
+                    Operation = "get_value",
+                    Items = new List<RequestItem>(),
+                };
+
+                request.Items.Add(new RequestItem
+                {
+                    Path = "/MACHINE/CONTROLLER/VARIABLE@CHAN_0",
+                    Index = RegisterOffsetConstants.E_Stop,
+                });
+
+                var result = await _apiClient.PostAsync<BaseResponse<int[][]>>($"/v1/{CurrentSNCode}/data", request).ConfigureAwait(false);
+                var deviceAlarmInfor = result?.Value?[0]?[0] == 1;
+                return new BaseResponse<bool>
+                {
+                    Code = result?.Code ?? -1,
+                    Status = result?.Status ?? "未知错误",
+                    Value = deviceAlarmInfor
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<bool>
+                {
+                    Status = $"错误: {ex.Message}",
+                };
+            }
+        }
+
+
         #endregion
 
         /// <summary>
