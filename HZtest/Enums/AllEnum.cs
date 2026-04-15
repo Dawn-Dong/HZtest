@@ -480,6 +480,60 @@ namespace HZtest.Models
         /// </summary>
         [Description("手动关闭")]
         Failed = 3,
-    }   
+    }
 
+    /// <summary>
+    /// 订单详情状态枚举
+    /// </summary>
+    public enum OrderDetailsEnum
+    {
+        /// <summary>
+        /// 未知订单详情状态
+        /// </summary>
+        [Description("未知订单详情状态")]
+        Error = -1,
+        /// <summary>
+        /// 正常完工
+        /// </summary>
+        [Description("正常完工")]
+        NormalCompletion = 0,
+        /// <summary>
+        /// 加工异常
+        /// </summary>
+        [Description("加工异常")]
+        ProcessingAnomaly = 1,
+    }
+
+    /// <summary>
+    /// 当前件状态（大订单内部）
+    /// </summary>
+    public enum PartState
+    {
+
+        /// <summary>
+        /// 未知状态异常
+        /// </summary>
+        [Description("未知状态异常")]
+        Error = -1,
+        /// <summary>
+        /// 等待开始
+        /// </summary>
+        [Description("等待开始")]
+        Waiting = 0,      // 等待开始
+        /// <summary>
+        /// 加工中
+        /// </summary>
+        [Description("加工中")]
+        Running,      // 加工中
+        /// <summary>
+        /// 正常完成
+        /// </summary>
+        [Description("正常完成")]
+        Completed,    // 完成
+        /// <summary>
+        /// 失败
+        /// </summary>
+        [Description("失败")]
+        Failed        // 失败
+    }
 }

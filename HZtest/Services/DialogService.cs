@@ -356,6 +356,7 @@ namespace HZtest.Services
                 "ConfigAlarmInfoLevel" => _serviceProvider.GetRequiredService<ConfigAlarmInfoLevelDialogs>(),
                 "AddOrUpdateAlarmInfoLevel" => _serviceProvider.GetRequiredService<AddOrUpdateAlarmInfoLevelDialogs>(),
                 "AddOrUpdateOrder" => _serviceProvider.GetRequiredService<AddOrUpdateOrderDialogs>(),
+                "OrderDetails" => _serviceProvider.GetRequiredService<OrderDetailsDialogs>(),
                 _ => throw new ArgumentException($"未知对话框: {name}")
             };
         }

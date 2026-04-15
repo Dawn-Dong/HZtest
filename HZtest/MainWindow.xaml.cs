@@ -1,5 +1,6 @@
 ﻿using HZtest.Interfaces_接口定义;
 using HZtest.Resources_资源.Control.ViewModel;
+using HZtest.Services.Processor;
 using HZtest.View;
 using HZtest.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -76,6 +77,7 @@ namespace HZtest
                 StatusTextBlock.Foreground = Brushes.Orange;
                 _mainWindowViewModel.Initialize();
             }
+           
         }
 
         /// <summary>
@@ -97,6 +99,8 @@ namespace HZtest
                 OperatingEQPSNCode = SNCode ?? string.Empty;
                 _mainWindowViewModel.Initialize();
             }
+            // 自动创建OrderProcessor并注入依赖
+            var processor = App.Services.GetRequiredService<OrderProcessor>();
         }
 
 

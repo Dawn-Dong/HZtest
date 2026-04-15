@@ -169,7 +169,7 @@ namespace HZtest.ViewModels.Dialogs
 
                 if (existed)
                 {
-                    _message_service.ShowError($"{(OrderManagement == null ? "新增" : "更新")}失败，报警代码不能重复");
+                    _message_service.ShowError($"{(OrderManagement == null ? "新增" : "更新")}失败，订单编号不能重复");
                     return;
                 }
 

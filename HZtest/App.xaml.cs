@@ -2,6 +2,7 @@
 using HZtest.Interfaces_接口定义;
 using HZtest.Models.DB;
 using HZtest.Services;
+using HZtest.Services.Processor;
 using HZtest.Universal;
 using HZtest.View;
 using HZtest.View.Dialogs;
@@ -49,9 +50,10 @@ namespace HZtest
 
 
             Services = serviceCollection.BuildServiceProvider();
-
+           
             // 结构化日志实例化 - 确保在 BuildServiceProvider 之后获取实例
             _logger = Services.GetRequiredService<IStructuredLogger>();
+
             // 4. 启动主窗口
             var mainWindow = Services.GetRequiredService<MainWindow>();
             Current.MainWindow = mainWindow;
@@ -92,6 +94,8 @@ namespace HZtest
 
             // DialogService 延迟初始化（不在这里传RootGrid）
             services.AddSingleton<IDialogService, DialogService>();
+            //单例注册控制器
+            services.AddSingleton<OrderProcessor>();
             // MainWindow 
 
 
@@ -113,6 +117,7 @@ namespace HZtest
             services.AddTransient<ConfigAlarmInfoLevelViewModel>();
             services.AddTransient<AddOrUpdateAlarmInfoLevelViewModel>();
             services.AddTransient<AddOrUpdateOrderViewModel>();
+            services.AddTransient<OrderDetailsViewModel>();
 
             // Views
             services.AddTransient<MainWindow>();
@@ -132,6 +137,7 @@ namespace HZtest
             services.AddTransient<ConfigAlarmInfoLevelDialogs>();
             services.AddTransient<AddOrUpdateAlarmInfoLevelDialogs>();
             services.AddTransient<AddOrUpdateOrderDialogs>();
+            services.AddTransient<OrderDetailsDialogs>();
 
 
             // ApiClient: 使用 Typed Client，通过配置设置 BaseAddress；SetHandlerLifetime 控制 handler 重用周期
@@ -189,6 +195,7 @@ namespace HZtest
                 db.CodeFirst.InitTables(typeof(AlarmManagementConfigModel));
                 db.CodeFirst.InitTables(typeof(AlarmInfoModels));
                 db.CodeFirst.InitTables(typeof(OrderManagementModel));
+                db.CodeFirst.InitTables(typeof(OrderDetailsModel));
 
                 services.AddSingleton(db);  // 注入多租户客户端
 

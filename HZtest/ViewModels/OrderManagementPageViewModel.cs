@@ -1,5 +1,10 @@
-﻿using HZtest.Infrastructure_基础设施;
+﻿using Azure;
+using Azure.Core;
+using HZtest.Event;
+using HZtest.Event.EventBus;
+using HZtest.Infrastructure_基础设施;
 using HZtest.Interfaces_接口定义;
+using HZtest.Models;
 using HZtest.Models.DB;
 using HZtest.Services;
 using SqlSugar;
@@ -81,6 +86,17 @@ namespace HZtest.ViewModels
         /// </summary>
 
         public ICommand DeleteCommand { get; }
+
+        /// <summary>
+        /// 任务命令 （可开启可关闭）
+        /// </summary>
+        public ICommand TeskCommand { get; }
+
+        /// <summary>
+        /// 订单详情命令
+        /// </summary>
+        public ICommand ViewDetailsCommand { get; }
+
         #endregion
 
 
@@ -95,9 +111,11 @@ namespace HZtest.ViewModels
             AddCommand = new AsyncRelayCommand(AddOrderAsync);
             EditCommand = new AsyncRelayCommand<OrderManagementModel>(EditOrder);
             DeleteCommand = new AsyncRelayCommand<OrderManagementModel>(DeleteOrder);
+            TeskCommand = new AsyncRelayCommand<OrderManagementModel>(TeskCommandExecute);
+            ViewDetailsCommand = new AsyncRelayCommand(OpenOrderDetailsView);
             SearchOrdersAsync();
         }
-
+        
         /// <summary>
         /// 模糊查询订单 - 根据订单编号进行模糊查询，并按创建时间降序排序
         /// </summary>
@@ -107,11 +125,12 @@ namespace HZtest.ViewModels
             {
                 // 显示加载提示
                 IsLoading = true;
+                OrderManagementList.Clear();
                 OrderManagementList = await _Db.QueryableWithAttr<OrderManagementModel>()
                             .WhereIF(!string.IsNullOrWhiteSpace(SearchOrderCode), o => o.OrderCode.Contains(SearchOrderCode))
                             .OrderBy(o => o.CreateTime, OrderByType.Desc)
                             .ToListAsync();
-
+                IsLoading = false;
             }
             catch (Exception ex)
             {
@@ -203,7 +222,108 @@ namespace HZtest.ViewModels
 
         }
 
+        /// <summary>
+        /// 开启订单 关闭订单（开启/关闭任务）
+        /// </summary>
+        /// <param name="order"></param>
+        /// <returns></returns>
+        private async Task TeskCommandExecute(OrderManagementModel order)
+        {
+
+            try
+            {
+                if (order.OrderState == Models.OrderStateEnum.Pending)
+                {
+                    #region 状态校验
+                    // 开启订单前，校验是否有其他订单正在执行中
+                    var OpenTaskExistencen = await _Db.QueryableWithAttr<OrderManagementModel>()
+                                               .AnyAsync(x => x.OrderState == OrderStateEnum.Processing);
+                    if (OpenTaskExistencen)
+                    {
+                        _message_service.ShowError($"订单开启失败，已有任务在执行中。");
+                        return;
+                    }
+                    var orderStartRequest = new OrderStartRequestEventArgs()
+                    {
+                        OrderManagementModel = order,
+                        OrderCode = order.OrderCode,
+                        Timestamp = DateTime.Now
+
+                    };
+
+                    //通过总线发送消息，通知订单服务
+                    var bus = OrderEventBus.Instance;
+                    //做前置校验并且等待返回结果
+                    var response = await bus.PublishAndWaitForResponseAsync(order);
+                    if (response != null && !response.IsValid)
+                    {
+                        _logger.Info($"订单{order.OrderCode} 预校验失败，信息：{response.ValidationMessage}");
+                        _message_service.ShowError($"订单开启失败，{response.ValidationMessage}");
+                        return;
+                    }
+
+                    #endregion
+
+                    order.OrderState = OrderStateEnum.Processing;
+
+                    var result = await _Db.UpdateableWithAttr(order)
+                                    .IgnoreColumns(it => it.CreateTime)
+                                    .ExecuteCommandAsync();
+                    //通知订单开始
+                    bus.PublishOrderStartRequest(orderStartRequest);
+                    _logger.Info($"手动开启订单{order.OrderCode}  状态由{order.OrderState}修改为{OrderStateEnum.Processing}{(result != 0 ? "成功" : "失败")}");
+                    _message_service.ShowMessage($"开启订单{(result != 0 ? "成功" : "失败")}");
 
 
+                }
+                else
+                {
+                    order.OrderState = OrderStateEnum.Failed;
+                    order.ModifyTime = DateTime.Now;
+                    //通过总线发送消息，通知订单服务开启订单
+                    var bus = OrderEventBus.Instance;
+                    var orderCloseRequest = new OrderCloseEventArgs()
+                    {
+                        OrderManagementModel = order,
+                        OrderCode = order.OrderCode,
+                        Timestamp = DateTime.Now,
+                        isManualClose = true
+                    };
+                    bus.PublishOrderClose(orderCloseRequest);
+
+                    var result = await _Db.UpdateableWithAttr(order)
+                        .IgnoreColumns(it => it.CreateTime)
+                        .ExecuteCommandAsync();
+                    _logger.Info($"订单{order.OrderCode}  状态由{order.OrderState}修改为{OrderStateEnum.Failed}{(result != 0 ? "成功" : "失败")}");
+                    _message_service.ShowMessage($"关闭订单{(result != 0 ? "成功" : "失败")}");
+
+                }
+                SearchOrdersAsync();
+
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("订单状态修改失败", ex);
+                _message_service.ShowError($"订单状态修改失败:{ex.Message}");
+            }
+
+        }
+
+        /// <summary>
+        /// 查看订单详情
+        /// </summary>
+        /// <returns></returns>
+        private async Task OpenOrderDetailsView()
+        {
+            try
+            {
+                var result = await _dialogService.ShowDialogAsync<OrderDetailsModel?>("OrderDetails", allowMultiLayer: true);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("查看订单详情失败", ex);
+                _message_service.ShowError($"查看订单详情失败:{ex.Message}");
+            }
+        }
     }
 }

@@ -4,9 +4,13 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:HZtest.View"
+      xmlns:converters="clr-namespace:HZtest.Converters_值转换.View"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
       Title="OrderManagementPage">
+    <Page.Resources>
+        <converters:CanClickConverter x:Key="CanClickConverter"/>
+    </Page.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -86,8 +90,9 @@
                 Margin="10,0"
                 Cursor="Hand"/>
             <!-- 新增按钮（靠右） -->
-            <Button Grid.Column="3" 
-            Grid.Row="0"
+
+            <StackPanel Margin="70,0,0,0" Grid.Column="3" Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">
+                <Button 
                 Content="+ 新增订单" 
                 Command="{Binding AddCommand}"
                 Width="120" 
@@ -95,6 +100,21 @@
                 Background="#2196F3"
                 Foreground="White"
                 Cursor="Hand"/>
+
+                <Button 
+               Margin="20,0,0,0"
+               Content="订单详情" 
+               Command="{Binding ViewDetailsCommand}"
+               Width="120" 
+               Height="30"
+               Background="#FF00B8B2"
+               Foreground="White"
+               Cursor="Hand"/>
+
+            </StackPanel>
+
+
+
         </Grid>
 
 
@@ -114,10 +134,10 @@
                     <!-- 表头 -->
                     <Grid Background="#F5F5F5">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="130"/>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="70"/>
                             <ColumnDefinition Width="110"/>
-                            <ColumnDefinition Width="110"/>
-                            <ColumnDefinition Width="130"/>
+                            <ColumnDefinition Width="120"/>
                             <ColumnDefinition Width="110"/>
                             <ColumnDefinition Width="110"/>
                             <ColumnDefinition Width="*"/>
@@ -140,10 +160,10 @@
                                     BorderThickness="0,0,0,1">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="130"/>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="70"/>
                                             <ColumnDefinition Width="110"/>
-                                            <ColumnDefinition Width="110"/>
-                                            <ColumnDefinition Width="130"/>
+                                            <ColumnDefinition Width="120"/>
                                             <ColumnDefinition Width="110"/>
                                             <ColumnDefinition Width="110"/>
                                             <ColumnDefinition Width="*"/>
@@ -188,7 +208,7 @@
                                         </TextBlock>
                                         <!-- 状态 -->
                                         <TextBlock Grid.Column="4" 
-                                                   Text="{Binding OrderState}" 
+                                                   Text="{Binding OrderState, Converter={StaticResource EnumToDescriptionConverter}}" 
                                                    Padding="10,12" 
                                                    TextAlignment="Center"
                                                    VerticalAlignment="Center"
@@ -233,6 +253,53 @@
                                                 Background="#F44336"
                                                 Foreground="White"
                                                 Cursor="Hand"/>
+
+                                            <Button Width="70" 
+                                                    Height="26" 
+                                                    Margin="5,0" 
+                                                    Foreground="White"
+                                                    Command="{Binding DataContext.TeskCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    IsHitTestVisible="{Binding OrderState, Converter={StaticResource CanClickConverter}}">
+                                                <Button.Style>
+                                                    <Style TargetType="Button">
+                                                        <!-- 默认：可点击，不透明 -->
+                                                        <Setter Property="Opacity" Value="1"/>
+                                                        <Setter Property="Content" Value="开启任务"/>
+                                                        <Setter Property="Background" Value="#2668F9"/>
+
+                                                        <Style.Triggers>
+                                                            <!-- 运行中 -->
+                                                            <DataTrigger Binding="{Binding OrderState}" Value="Processing">
+                                                                <Setter Property="Content" Value="关闭任务"/>
+                                                                <Setter Property="Background" Value="#FF5722"/>
+                                                            </DataTrigger>
+
+                                                            <!-- 异常 -->
+                                                            <DataTrigger Binding="{Binding OrderState}" Value="Error">
+                                                                <Setter Property="Content" Value="任务异常"/>
+                                                                <Setter Property="Background" Value="#FF5722"/>
+                                                                <Setter Property="Opacity" Value="0.5"/>
+                                                                <!-- 变灰 -->
+                                                            </DataTrigger>
+
+                                                            <!-- 已完成 -->
+                                                            <DataTrigger Binding="{Binding OrderState}" Value="Completed">
+                                                                <Setter Property="Content" Value="已完成"/>
+                                                                <Setter Property="Background" Value="#2DFF22"/>
+                                                                <Setter Property="Opacity" Value="0.5"/>
+                                                            </DataTrigger>
+
+                                                            <!-- 手动关闭 -->
+                                                            <DataTrigger Binding="{Binding OrderState}" Value="Failed">
+                                                                <Setter Property="Content" Value="已手动结束"/>
+                                                                <Setter Property="Background" Value="#8DFF12"/>
+                                                                <Setter Property="Opacity" Value="0.5"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
                                         </StackPanel>
                                     </Grid>
                                 </Border>
