@@ -16,6 +16,11 @@ namespace HZtest.Models.Response
         public string OrderCode { get; set; } = string.Empty;
 
         /// <summary>
+        /// 工件序列号
+        /// </summary>
+        public int SerialNumber { get; set; } = 0;
+
+        /// <summary>
         /// 下单数量
         /// </summary>
         public int OrderQuantity { get; set; }

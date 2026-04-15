@@ -38,6 +38,11 @@ namespace HZtest.Models.DB
         public OrderDetailsEnum OrderDetailsType { get; set; } = OrderDetailsEnum.Error;
 
         /// <summary>
+        /// 序列号
+        /// </summary>
+        [SugarColumn(IsNullable = false)]
+        public int SerialNumber { get; set; } = 0;
+        /// <summary>
         /// 备注信息 这里一般是错误信息
         /// </summary>
         [SugarColumn(IsNullable = true, Length = 500)]

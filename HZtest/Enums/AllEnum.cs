@@ -507,7 +507,7 @@ namespace HZtest.Models
     /// <summary>
     /// 当前件状态（大订单内部）
     /// </summary>
-    public enum PartState
+    public enum PartStateEnum
     {
 
         /// <summary>

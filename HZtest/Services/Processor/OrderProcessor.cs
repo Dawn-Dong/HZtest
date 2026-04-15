@@ -4,6 +4,7 @@ using HZtest.Interfaces_接口定义;
 using HZtest.Models;
 using HZtest.Models.DB;
 using HZtest.Models.Request;
+using HZtest.Models.Response;
 using SqlSugar;
 using System.Collections.Concurrent;
 using System.IO;
@@ -29,6 +30,31 @@ namespace HZtest.Services.Processor
 
 
         private readonly CancellationTokenSource _processorCts = new CancellationTokenSource();
+
+
+
+        /// <summary>
+        /// 设备状态
+        /// </summary>
+        private DeviceStateEnum deviceState = DeviceStateEnum.Error;
+
+        /// <summary>
+        /// 设备报警信息列表  可能有多个报警，  只要有一个报警存在，设备就不正常
+        /// </summary>
+        private List<DeviceAlarmInforResponse> deviceAlarmInfo = new List<DeviceAlarmInforResponse>();
+        /// <summary>
+        /// 设备运行模式  只有在自动模式下才允许开启订单， 其他模式都不允许开启订单
+        /// </summary>
+        private DevOperationModeEnum deviceOperationMode = DevOperationModeEnum.Home;
+        /// <summary>
+        /// 设备是否处于急停状态
+        /// </summary>
+        private bool E_Stop = false;
+
+        /// <summary>
+        /// 启动和暂停按钮状态
+        /// </summary>
+        private StartStopState startStopState = new StartStopState();
 
         public OrderProcessor(DeviceService deviceService, IStructuredLogger logger, SqlSugarClient db, IMessageService messageService)
         {
@@ -186,79 +212,169 @@ namespace HZtest.Services.Processor
         }
 
         /// <summary>
-        /// 监控生产循环  记录生产数量和状态  直到完成或异常（核心方法）
+        /// 大订单监控循环 - 内部管理当前件状态
+        /// </summary>
+        private async Task MonitorProductionLoopAsync(RunningOrderContext context)
+        {
+
+            // 循环直到完成所有件或取消
+            while (context.CurrentPartNumber <= context.TargetQuantity &&
+                   !context.MonitorCts.IsCancellationRequested)
+            {
+                try
+                {
+
+
+                    IsDeviceNormal();
+                    // ═══════════════════════════════════════════════════════
+                    // 当前件状态机（核心）
+                    // ═══════════════════════════════════════════════════════
+                    switch (context.CurrentPartState)
+                    {
+                        case PartStateEnum.Waiting:
+                            // 等待设备就绪 + CycleStart上升沿
+                            await HandlePartWaitingAsync(context);
+                            break;
+
+                        case PartStateEnum.Running:
+                            // 监控加工过程，等待完成或异常
+                            await HandlePartRunningAsync(context);
+                            break;
+
+                        case PartStateEnum.Completed:
+                        case PartStateEnum.Failed:
+                            // 当前件结束，准备下一件
+                            // await HandlePartFinishedAsync(context);
+                            break;
+                    }
+                    await Task.Delay(300);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error("OrderProcessor", $"订单{context.OrderCode}监控循环过程中发生异常: {ex.Message}");
+                }
+
+
+            }
+        }
+
+        /// <summary>
+        /// 件开始等待状态：等CycleStart
+        /// </summary>
+        private async Task HandlePartWaitingAsync(RunningOrderContext context)
+        {
+            // 检查设备状态，必须是空闲状态才允许启动件加工
+            if (deviceState != DeviceStateEnum.Free)
+            {
+                _logger.Info("OrderProcessor", $"订单{context.OrderCode}等待中，设备非空闲状态，继续等待...");
+                return;
+            }
+            if (deviceAlarmInfo?.Count != 0)
+            {
+                _logger.Info("OrderProcessor", $"订单{context.OrderCode}等待中，设备存在报警，继续等待...");
+                return;
+            }
+            if (deviceOperationMode != DevOperationModeEnum.Auto)
+            {
+                _logger.Info("OrderProcessor", $"订单{context.OrderCode}等待中，设备不是自动模式，继续等待...");
+                return;
+            }
+            if (E_Stop)
+            {
+                _logger.Info("OrderProcessor", $"订单{context.OrderCode}等待中，设备急停被按下，继续等待...");
+                return;
+            }
+
+            // 检查设备启动按钮状态，必须是从未按下到按下的上升沿才认为是新的一件开始
+
+            // 检测CycleStart上升沿
+            if (startStopState?.CycleStart ?? false)
+            {
+                context.CurrentPartStartTime = DateTime.Now;
+                context.CurrentPartState = PartStateEnum.Running;
+
+                _logger.Info("OrderProcessor",
+                    $"订单{context.OrderCode} 第{context.CurrentPartNumber}件开始加工");
+            }
+        }
+        /// <summary>
+        /// 中途监控件运行状态：等CycleStart下降沿（件完成）或设备异常
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        private async Task MonitorProductionLoopAsync(RunningOrderContext context)
+        private async Task HandlePartRunningAsync(RunningOrderContext context)
         {
-            var orderCode = context.OrderCode;
-            var token = context.MonitorCts.Token;
-            context.CurrentPartNumber = 1;
-            _logger.Info("OrderProcessor", $"订单{orderCode}监控循环已启动，目标{context.TargetQuantity}件");
-            try
+            if (deviceState == DeviceStateEnum.Error)
             {
-                while (!token.IsCancellationRequested)
-                {
-
-                    //获取设备启动和暂停按钮状态
-                    var deviceOperatingStatus = await _deviceService.GetStartPauseStateAsync();
-                    //获取设备报警信息
-                    var deviceAlarmInfo = await _deviceService.GetDeviceAlarmInforAsync();
-                    if (deviceAlarmInfo.Value?.Count > 0)
-                    {
-                        ///记录异常，结束当前件（失败）
-                        await CompletePartAsync(context, isNormal: false, errorMessage: $"设备报警: {deviceAlarmInfo.Value}");
-                        context.IsDeviceNormal = false;
-                        continue;
-                    }
-
-                    //获取设备运行状态
-                    var deviceState = await _deviceService.GetDeviceStateAsync();
-                    if (deviceState.Value != DeviceStateEnum.Running)
-                    {
-                        // 记录异常，结束当前件（失败）
-                        await CompletePartAsync(context, isNormal: false, errorMessage: $"设备状态异常: {deviceState.Value}");
-                        context.IsDeviceNormal = false;
-                        continue;
-                    }
-                    //获取设备运行模式
-                    var deviceOperationMode = await _deviceService.GetOperationModeAsync();
-                    if (deviceOperationMode.Value != DevOperationModeEnum.Auto)
-                    {
-                        ///记录异常，结束当前件（失败）
-                        await CompletePartAsync(context, isNormal: false, errorMessage: $"设备运行模式不是自动模式:变为》》 {deviceOperationMode.Value}");
-                        context.IsDeviceNormal = false;
-                        continue;
-                    }
-                    var cycleStart = deviceOperatingStatus.Value.CycleStart;
-                    if (context.IsDeviceNormal && cycleStart && !context.CurrentPartStartTime.HasValue)
-                    {
-                        context.CurrentPartStartTime = DateTime.Now;
-                        context.LastCycleStart = true;
-                        _logger.Info("OrderProcessor", $"第{context.CurrentPartNumber}件开始 {context.CurrentPartStartTime:HH:mm:ss}");
-                    }
-
-                    // 检测CycleStart下降沿（件结束）或产量增加
-                    if (context.IsDeviceNormal && !cycleStart && context.LastCycleStart && context.CurrentPartStartTime.HasValue)
-                    {
-                        await CompletePartAsync(context, isNormal: true);
-                        continue;
-                    }
-                    await Task.Delay(300); // 每隔300ms更新一次
-                }
+                context.CurrentPartState = PartStateEnum.Failed;
+                await CompletePartAsync(context, isNormal: false, errorMessage: "加工过程中设备变为异常状态");
+                return;
             }
-            catch (Exception ex)
+            if (deviceAlarmInfo.Any())
             {
-                _logger.Error("OrderProcessor", $"订单{context.OrderCode}监控循环发生异常已结束: {ex.Message}");
-                context.Status = OrderStateEnum.Error;
+                context.CurrentPartState = PartStateEnum.Failed;
+                await CompletePartAsync(context, isNormal: false, errorMessage: "加工过程中设备存在报警");
+                return;
             }
-            finally
+            if (deviceOperationMode != DevOperationModeEnum.Auto)
             {
-
-                _logger.Info("OrderProcessor", $"订单{context.OrderCode}监控循环已结束，订单上下文已移除");
+                context.CurrentPartState = PartStateEnum.Failed;
+                await CompletePartAsync(context, isNormal: false, errorMessage: "加工过程中设备不是自动模式");
+                return;
+            }
+            if (E_Stop)
+            {
+                context.CurrentPartState = PartStateEnum.Failed;
+                await CompletePartAsync(context, isNormal: false, errorMessage: "加工过程中设备急停被按下");
+                return;
+            }
+            // 检测CycleStart下降沿（件完成）
+            if (!startStopState?.CycleStart ?? false)
+            {
+                context.CurrentPartState = PartStateEnum.Completed;
+                await CompletePartAsync(context, isNormal: true);
             }
         }
+
+
+
+
+        /// <summary>
+        /// 获取设备状态 ，报警信息 ，运行模式等综合判断设备是否正常  可能会有多个接口调用， 只要有一个接口显示设备异常， 就认为设备异常
+        /// </summary>
+        private async void IsDeviceNormal()
+        {
+            try
+            {
+                var deviceStateResponse = await _deviceService.GetDeviceStateAsync();
+                await Task.Delay(100);
+                var deviceAlarmInfoResponse = await _deviceService.GetDeviceAlarmInforAsync();
+                await Task.Delay(100);
+                var deviceOperationModeResponse = await _deviceService.GetOperationModeAsync();
+                await Task.Delay(100);
+                var deviceE_StopStateResponse = await _deviceService.GetEmergencyStopStateAsync();
+                await Task.Delay(100);
+                var startPauseStateResponse = await _deviceService.GetStartPauseStateAsync();
+                await Task.Delay(100);
+
+                if (deviceStateResponse?.Value != null)
+                    deviceState = deviceStateResponse.Value;
+                if (deviceAlarmInfoResponse?.Value != null)
+                    deviceAlarmInfo = deviceAlarmInfoResponse.Value;
+                if (deviceOperationModeResponse?.Value != null)
+                    deviceOperationMode = deviceOperationModeResponse.Value;
+                if (deviceE_StopStateResponse?.Value != null)
+                    E_Stop = deviceE_StopStateResponse.Value;
+                if (startPauseStateResponse?.Value != null)
+                    startStopState = startPauseStateResponse.Value;
+            }
+            catch (Exception er)
+            {
+
+                _logger.Error("OrderProcessor", $"检查设备状态过程中发生异常: {er.Message}");
+            }
+        }
+
         /// <summary>
         /// 完成当前件（正常或异常）
         /// </summary>
@@ -270,6 +386,7 @@ namespace HZtest.Services.Processor
                 Id = SnowFlakeSingle.Instance.NextId(),
                 FK_OrderManagementId = context.OrderId,
                 StartTime = context.CurrentPartStartTime,
+                SerialNumber = context.CurrentPartNumber,
                 EndTime = DateTime.Now,
                 CreateTime = DateTime.Now,
                 OrderDetailsType = isNormal ? OrderDetailsEnum.NormalCompletion : OrderDetailsEnum.ProcessingAnomaly,
@@ -288,14 +405,18 @@ namespace HZtest.Services.Processor
             {
                 //结束订单循环监控
                 context.MonitorCts.Cancel();
-                OnOrderCloseRequested("1", new OrderCloseEventArgs() { OrderManagementModel = new OrderManagementModel() { Id = context.OrderId } });
+                OnOrderCloseRequested("true", new OrderCloseEventArgs() { OrderManagementModel = new OrderManagementModel() { Id = context.OrderId } });
                 _logger.Info("OrderProcessor", $"订单{context.OrderCode}监控循环已结束，订单状态已更新为完成");
                 var result = await _db.InsertableWithAttr(context.OrderDetailsList).ExecuteCommandAsync();
-                _logger.Info("OrderProcessor", $"订单{context.OrderCode}完成，订单详情已记录");
+                _logger.Info("OrderProcessor", $"订单{context.OrderCode}完成，订单详情 {result}条已记录");
             }
             // 准备下一件
             context.CurrentPartNumber++;
             context.CurrentPartStartTime = null;
+            if (context.CurrentPartState == PartStateEnum.Completed || context.CurrentPartState == PartStateEnum.Failed)
+            {
+                context.CurrentPartState = PartStateEnum.Waiting;
+            }
         }
 
         /// <summary>
@@ -321,13 +442,16 @@ namespace HZtest.Services.Processor
                 if (e.isManualClose)
                 {
                     _logger.Info("OrderProcessor", $"订单{context.OrderCode}监控已请求取消（手动关闭）");
+                    var result = await _db.UpdateableWithAttr<OrderManagementModel>().SetColumns(it => new OrderManagementModel { OrderState = OrderStateEnum.Failed })
+         .Where(it => it.Id == e.OrderManagementModel.Id).ExecuteCommandAsync();
                 }
                 else
                 {
                     _logger.Info("OrderProcessor", $"订单{context.OrderCode}监控已请求取消（自动关闭）");
                     var result = await _db.UpdateableWithAttr<OrderManagementModel>().SetColumns(it => new OrderManagementModel { OrderState = OrderStateEnum.Completed })
-                       .Where(it => it.Id == e.OrderManagementModel.Id).ExecuteCommandAsync();
+         .Where(it => it.Id == e.OrderManagementModel.Id).ExecuteCommandAsync();
                 }
+
                 // 清理资源，移除订单上下文
                 _runningOrders.TryRemove(kvp.Key, out _);
             }
@@ -373,7 +497,7 @@ namespace HZtest.Services.Processor
         /// <summary>
         /// 当前零件序号
         /// </summary>
-        public int CurrentPartNumber { get; set; }
+        public int CurrentPartNumber { get; set; } = 1;
         /// <summary>
         /// 当前零件开始时间
         /// </summary>
@@ -399,7 +523,7 @@ namespace HZtest.Services.Processor
         /// <summary>
         /// 当前件状态（内部状态机）
         /// </summary>
-        public PartState CurrentPartState { get; set; } = PartState.Waiting;
+        public PartStateEnum CurrentPartState { get; set; } = PartStateEnum.Waiting;
         /// <summary>
         /// 上次启动按钮状态
         /// </summary>

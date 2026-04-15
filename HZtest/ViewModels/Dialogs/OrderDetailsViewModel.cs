@@ -160,15 +160,12 @@ namespace HZtest.ViewModels.Dialogs
                     .Includes(o => o.OrderManagement)
                     .WhereIF(SelectedOrderID != -1, o => o.FK_OrderManagementId == SelectedOrderID)
                     .WhereIF(SelectedOrderDetailsType != -10, o => o.OrderDetailsType == (OrderDetailsEnum)SelectedOrderDetailsType)
+                    .OrderBy(o => o.SerialNumber)
                     .Select(o => new OrderDetailsResponse
                     {
                         OrderCode = o.OrderManagement.OrderCode,
                         OrderQuantity = o.OrderManagement.OrderQuatity,
-                        StartTime = o.StartTime,
-                        EndTime = o.EndTime,
-                        OrderDetailsType = o.OrderDetailsType,
-                        Remark = o.Remark
-                    })
+                    }, true)
                     .ToListAsync();
             }
             catch (Exception ex)

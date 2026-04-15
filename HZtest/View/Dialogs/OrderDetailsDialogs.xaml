@@ -6,13 +6,12 @@
              xmlns:local="clr-namespace:HZtest.View.Dialogs"
              xmlns:Converters="clr-namespace:HZtest.Converters_值转换"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="900">
     <UserControl.Resources>
         <!-- 定义转换器 -->
         <Converters:EnumToDescriptionConverter x:Key="EnumDescConverter"/>
     </UserControl.Resources>
-    <Border Background="White" BorderBrush="Gray" BorderThickness="2" CornerRadius="5" Padding="20" Width="700" Height="500">
-
+    <Border Background="White" BorderBrush="Gray" BorderThickness="2" CornerRadius="5" Padding="20" Width="900" Height="500">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -136,17 +135,21 @@
                         <Grid Background="#F5F5F5">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="60"/>
                                 <ColumnDefinition Width="130"/>
                                 <ColumnDefinition Width="130"/>
+                                <ColumnDefinition Width="120"/>
                                 <ColumnDefinition Width="120"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
                             <TextBlock Grid.Column="0" Text="订单编号" FontWeight="Bold" Padding="10,8" TextAlignment="Center"/>
-                            <TextBlock Grid.Column="1" Text="开始时间" FontWeight="Bold" Padding="10,8" TextAlignment="Center"/>
-                            <TextBlock Grid.Column="2" Text="完工时间" FontWeight="Bold" Padding="10,8" TextAlignment="Center"/>
-                            <TextBlock Grid.Column="3" Text="需求数量" FontWeight="Bold" Padding="10,8" TextAlignment="Center"/>
-                            <TextBlock Grid.Column="4" Text="状态" FontWeight="Bold" Padding="10,8" TextAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="序号" FontWeight="Bold" Padding="10,8" TextAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="开始时间" FontWeight="Bold" Padding="10,8" TextAlignment="Center"/>
+                            <TextBlock Grid.Column="3" Text="完工时间" FontWeight="Bold" Padding="10,8" TextAlignment="Center"/>
+                            <TextBlock Grid.Column="4" Text="需求数量" FontWeight="Bold" Padding="10,8" TextAlignment="Center"/>
+                            <TextBlock Grid.Column="5" Text="状态" FontWeight="Bold" Padding="10,8" TextAlignment="Center"/>
+                            <TextBlock Grid.Column="6" Text="信息" FontWeight="Bold" Padding="10,8" TextAlignment="Center"/>
                         </Grid>
 
                         <!-- 数据行 -->
@@ -158,8 +161,10 @@
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="120"/>
+                                                <ColumnDefinition Width="60"/>
                                                 <ColumnDefinition Width="130"/>
                                                 <ColumnDefinition Width="130"/>
+                                                <ColumnDefinition Width="120"/>
                                                 <ColumnDefinition Width="120"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
@@ -170,9 +175,14 @@
                                                        Padding="10,12" 
                                                        TextAlignment="Center"
                                                        VerticalAlignment="Center"/>
-
-                                            <!-- 开始时间 -->
+                                            <!--序列号-->
                                             <TextBlock Grid.Column="1" 
+                                                       Text="{Binding SerialNumber}" 
+                                                       Padding="10,12" 
+                                                       TextAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                            <!-- 开始时间 -->
+                                            <TextBlock Grid.Column="2" 
                                                        Text="{Binding StartTime, StringFormat='yyyy-MM-dd HH:mm:ss'}" 
                                                        Padding="10,12" 
                                                        TextAlignment="Center"
@@ -196,14 +206,14 @@
                                             </TextBlock>
 
                                             <!-- 完工时间 -->
-                                            <TextBlock Grid.Column="2" 
+                                            <TextBlock Grid.Column="3" 
                                                        Text="{Binding EndTime, StringFormat='yyyy-MM-dd HH:mm:ss'}" 
                                                        Padding="10,12" 
                                                        TextAlignment="Center"
                                                        VerticalAlignment="Center"
                                                        FontSize="12"/>
                                             <!-- 需求数量 -->
-                                            <TextBlock Grid.Column="3"
+                                            <TextBlock Grid.Column="4"
                                                        Text="{Binding OrderQuantity}"
                                                        Padding="10,12"
                                                        TextAlignment="Center"
@@ -211,7 +221,7 @@
                                                        Foreground="Gray"
                                                        FontSize="12"/>
                                             <!-- 状态 -->
-                                            <TextBlock Grid.Column="4"
+                                            <TextBlock Grid.Column="5"
                                                        Text="{Binding OrderDetailsType,Converter={StaticResource EnumDescConverter}}"
                                                        Padding="10,12"
                                                        TextAlignment="Center"
@@ -232,6 +242,18 @@
                                                         </Style.Triggers>
                                                     </Style>
                                                 </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Grid.Column="6" 
+                                                       Text="{Binding Remark}" 
+                                                       Padding="10,12" 
+                                                       TextAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis">
+                                                <TextBlock.ToolTip>
+                                                    <TextBlock Text="{Binding Remark}" 
+                                                               MaxWidth="500"
+                                                               TextWrapping="Wrap"/>
+                                                </TextBlock.ToolTip>
                                             </TextBlock>
                                         </Grid>
                                     </Border>
