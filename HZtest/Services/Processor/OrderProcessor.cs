@@ -56,6 +56,10 @@ namespace HZtest.Services.Processor
         /// </summary>
         private StartStopState startStopState = new StartStopState();
 
+        /// <summary>
+        /// 设备连接状态
+        /// </summary>
+        private bool DeviceConnection = false;
         public OrderProcessor(DeviceService deviceService, IStructuredLogger logger, SqlSugarClient db, IMessageService messageService)
         {
             _deviceService = deviceService ?? throw new ArgumentNullException(nameof(_deviceService));
@@ -356,6 +360,20 @@ namespace HZtest.Services.Processor
                 await Task.Delay(100);
                 var startPauseStateResponse = await _deviceService.GetStartPauseStateAsync();
                 await Task.Delay(100);
+                //var deviceConnectionStateResponse = await _deviceService.GetDeviceInfoAsync(_deviceService.GetCurrentSNCode());
+
+                //DeviceConnection = deviceConnectionStateResponse.Code == 0;
+
+                //if (!DeviceConnection)
+                //{
+                //    deviceState = DeviceStateEnum.Error;
+                //    deviceAlarmInfo = new List<DeviceAlarmInforResponse>();
+                //    deviceOperationMode = DevOperationModeEnum.Home;
+                //    E_Stop = false;
+                //    startStopState = new StartStopState();
+                //    return;
+                //}
+
 
                 if (deviceStateResponse?.Value != null)
                     deviceState = deviceStateResponse.Value;
